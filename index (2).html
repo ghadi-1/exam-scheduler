@@ -1,0 +1,3942 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>منظم جدول الاختبارات - متكامل</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root {
+  --primary: #1F4E79;
+  --primary-light: #4A7BA7;
+  --primary-dark: #0F3050;
+  --accent: #D4A574;
+  --bg: #F7F3ED;
+  --card: #FFFFFF;
+  --text: #1A1A1A;
+  --text-muted: #6B6B6B;
+  --border: #E5DFD3;
+  --safety: #FFE4B5;
+  --media: #B0E0E6;
+  --shared: #D8BFD8;
+  --danger: #C0392B;
+  --warning: #E67E22;
+  --success: #27AE60;
+  --shadow: 0 4px 20px rgba(31, 78, 121, 0.08);
+  --shadow-lg: 0 10px 40px rgba(31, 78, 121, 0.12);
+  --level-1: #E8F5E9;
+  --level-2: #FFF3E0;
+  --level-3: #E3F2FD;
+  --level-4: #FCE4EC;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Tajawal', sans-serif;
+  background: var(--bg);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(212, 165, 116, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(31, 78, 121, 0.06) 0px, transparent 50%);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: 28px 40px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-lg);
+}
+.header-content {
+  max-width: 1700px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.header h1 {
+  font-family: 'Cairo', sans-serif;
+  font-weight: 900;
+  font-size: 26px;
+  letter-spacing: -0.5px;
+}
+.header .subtitle {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+.header-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.stat-pill {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 10px 16px;
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 80px;
+}
+.stat-pill .num { font-size: 22px; font-weight: 900; font-family: 'Cairo'; }
+.stat-pill .label { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+/* Tabs */
+.tabs-bar {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  display: flex;
+  gap: 4px;
+  position: sticky;
+  top: 100px;
+  z-index: 50;
+}
+.tab-btn {
+  padding: 14px 24px;
+  background: none;
+  border: none;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+.tab-btn:hover { color: var(--primary); }
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.tab-btn.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.container {
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 28px 40px;
+}
+
+/* Setup */
+.setup-section {
+  background: var(--card);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.setup-section h2 {
+  font-family: 'Cairo';
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+.section-description {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.uploads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  text-align: center;
+  background: linear-gradient(180deg, #FAFAF7 0%, #F4EFE5 100%);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.upload-zone:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.upload-zone.has-file {
+  border-color: var(--success);
+  background: #F0F9F4;
+}
+.upload-zone.required { border-color: var(--accent); }
+.upload-zone .icon { font-size: 30px; margin-bottom: 10px; display: block; }
+.upload-zone p { font-weight: 700; color: var(--primary); font-size: 14px; margin-bottom: 4px; }
+.upload-zone .hint { font-size: 12px; color: var(--text-muted); }
+.upload-zone .badge {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--primary-dark);
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.upload-zone .report-code {
+  display: inline-block;
+  margin-top: 10px;
+  background: #2D8659;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  border: 1px solid #1A5A38;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+.config-item {
+  background: #FAFAF7;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.config-item label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.config-item input, .config-item select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13px;
+  background: white;
+}
+
+.btn {
+  padding: 11px 22px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.btn-primary:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; transform: none; }
+.btn-accent { background: var(--accent); color: var(--primary-dark); }
+.btn-accent:hover { background: #C29560; }
+.btn-secondary { background: white; color: var(--primary); border: 1px solid var(--border); }
+.btn-secondary:hover { border-color: var(--primary); }
+.btn-danger { background: white; color: var(--danger); border: 1px solid var(--border); }
+.btn-danger:hover { background: var(--danger); color: white; border-color: var(--danger); }
+
+.actions-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+/* Layout */
+.main-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+}
+
+.sidebar {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  position: sticky;
+  top: 170px;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+.sidebar h3 {
+  font-family: 'Cairo';
+  font-size: 16px;
+  font-weight: 900;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.search-box { margin: 10px 0 14px; }
+.search-box input {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+}
+.filter-tabs { display: flex; gap: 5px; margin-bottom: 12px; flex-wrap: wrap; }
+.filter-tab {
+  padding: 5px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: white;
+  font-size: 11px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.filter-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+.item-card {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  cursor: grab;
+  transition: all 0.2s;
+  user-select: none;
+  position: relative;
+}
+.item-card:hover { border-color: var(--primary); transform: translateX(-3px); }
+.item-card.dragging { opacity: 0.4; }
+.item-card.placed { opacity: 0.55; background: #F5F5F5; cursor: not-allowed; }
+.item-card.excluded { opacity: 0.65; background: #FFF5F5; cursor: not-allowed; border-style: dashed; }
+.item-card.excluded:hover { transform: none; border-color: var(--border); }
+.item-card .head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.item-card .code { font-weight: 900; font-size: 13px; color: var(--primary-dark); }
+.item-card .name { font-size: 12px; color: var(--text); margin: 2px 0; line-height: 1.4; }
+.item-card .meta {
+  display: flex;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.item-card .meta-pill { background: #F0EBE0; padding: 2px 7px; border-radius: 6px; }
+.level-badge {
+  background: var(--level-1);
+  color: var(--text);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.level-badge.level-2 { background: var(--level-2); }
+.level-badge.level-3 { background: var(--level-3); }
+.level-badge.level-4 { background: var(--level-4); }
+
+.course-card.spec-safety { border-right: 4px solid #E67E22; }
+.course-card.spec-media { border-right: 4px solid #3498DB; }
+.course-card.spec-shared { border-right: 4px solid #9B59B6; }
+.course-card.spec-other { border-right: 4px solid #95A5A6; }
+
+/* Schedule grid */
+.grid-container {
+  background: var(--card);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+.grid-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.grid-header-bar h2 {
+  font-family: 'Cairo';
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.schedule-grid {
+  display: grid;
+  gap: 6px;
+}
+.grid-h {
+  background: var(--primary);
+  color: white;
+  padding: 10px 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  font-family: 'Cairo';
+}
+.grid-h .time { display: block; font-size: 10px; opacity: 0.85; font-weight: 400; margin-top: 2px; }
+.day-label {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+  color: white;
+  padding: 10px 6px;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cairo';
+}
+
+.slot-cell {
+  background: #FAFAF7;
+  border: 2px dashed var(--border);
+  border-radius: 6px;
+  min-height: 80px;
+  padding: 6px;
+  transition: all 0.2s;
+}
+.slot-cell.drag-over { background: #E8F4FD; border-color: var(--primary); border-style: solid; }
+.slot-cell.has-conflict { background: #FFEBEE; border-color: var(--danger); border-style: solid; }
+.slot-cell.over-capacity { background: #FFF3E0; border-color: var(--warning); border-style: solid; }
+.slot-cell .slot-info {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.placed-item {
+  background: white;
+  border-radius: 5px;
+  padding: 5px 7px;
+  margin-bottom: 3px;
+  font-size: 11px;
+  border-right: 3px solid var(--primary);
+  position: relative;
+  cursor: grab;
+}
+.placed-item.spec-safety { border-right-color: #E67E22; background: var(--safety); }
+.placed-item.spec-media { border-right-color: #3498DB; background: var(--media); }
+.placed-item.spec-shared { border-right-color: #9B59B6; background: var(--shared); }
+.placed-item .pc-code { font-weight: 900; font-size: 11px; }
+.placed-item .pc-name { font-size: 10px; color: var(--text-muted); }
+.placed-item .pc-stats { font-size: 9px; color: var(--text-muted); margin-top: 2px; }
+.placed-item .remove-btn {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  background: rgba(192, 57, 43, 0.1);
+  color: var(--danger);
+  border: none;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+.placed-item:hover .remove-btn { display: flex; }
+
+/* Lab supervision view */
+.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.lab-table th {
+  background: var(--primary);
+  color: white;
+  padding: 10px;
+  font-family: 'Cairo';
+  font-weight: 700;
+  font-size: 12px;
+  text-align: center;
+}
+.lab-table td {
+  border: 1px solid var(--border);
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  background: white;
+}
+.lab-table tr:nth-child(even) td { background: #FAFAF7; }
+.supervisor-slot {
+  min-height: 30px;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.supervisor-slot.has-supervisor {
+  background: #E8F4FD;
+  border-style: solid;
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+.supervisor-slot.drag-over { background: #FFF3E0; }
+
+/* Notifications */
+.notifications {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 1000;
+  max-width: 380px;
+}
+.notification {
+  background: white;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-lg);
+  border-right: 4px solid;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  animation: slideIn 0.3s ease;
+}
+.notification.error { border-right-color: var(--danger); }
+.notification.warning { border-right-color: var(--warning); }
+.notification.success { border-right-color: var(--success); }
+.notification .icon { font-size: 18px; margin-top: 2px; }
+.notification .content { flex: 1; }
+.notification .title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+.notification .desc { font-size: 12px; color: var(--text-muted); }
+.notification .close { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 16px; }
+@keyframes slideIn { from { transform: translateX(-20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+.conflicts-panel {
+  background: white;
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.conflicts-panel h3 {
+  font-family: 'Cairo';
+  font-size: 15px;
+  color: var(--primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.conflict-item {
+  background: #FFF5F5;
+  border-right: 3px solid var(--danger);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.conflict-item.warn { background: #FFF8E7; border-right-color: var(--warning); }
+.conflict-item.info { background: #E8F4FD; border-right-color: var(--primary-light); color: var(--primary-dark); }
+
+/* تنبيهات بطاقات منظمة */
+.alert-section {
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.alert-section.alert-error { border-color: #F5C6CB; }
+.alert-section.alert-warn { border-color: #FCD9A4; }
+.alert-section.alert-info-section { border-color: #B8DAFF; }
+
+.alert-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+.alert-error .alert-section-header {
+  background: linear-gradient(180deg, #F8D7DA 0%, #F5C6CB 100%);
+  color: #721C24;
+}
+.alert-warn .alert-section-header {
+  background: linear-gradient(180deg, #FFF3CD 0%, #FCD9A4 100%);
+  color: #856404;
+}
+.alert-info-section .alert-section-header {
+  background: linear-gradient(180deg, #D1ECF1 0%, #B8DAFF 100%);
+  color: #0C5460;
+}
+
+.alert-icon {
+  font-size: 18px;
+}
+.alert-title {
+  flex: 1;
+}
+.alert-count {
+  background: rgba(255, 255, 255, 0.6);
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.alert-items {
+  background: white;
+  padding: 8px;
+}
+.alert-item {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.alert-item:last-child { margin-bottom: 0; }
+.alert-item-error {
+  background: #FFF5F5;
+  border-right: 3px solid var(--danger);
+  color: #721C24;
+}
+.alert-item-warn {
+  background: #FFFCF0;
+  border-right: 3px solid var(--warning);
+  color: #856404;
+}
+.alert-item-info {
+  background: #F4FAFF;
+  border-right: 3px solid var(--primary-light);
+  color: var(--primary-dark);
+}
+.alert-group {
+  margin-bottom: 10px;
+}
+.alert-group:last-child { margin-bottom: 0; }
+.alert-group-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  letter-spacing: 0.3px;
+}
+
+/* details/summary لقابلية الطي */
+.alert-section details summary::-webkit-details-marker { display: none; }
+.alert-section details summary { user-select: none; }
+.alert-section details[open] summary {
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.alert-section details summary:hover {
+  filter: brightness(0.97);
+}
+.no-conflicts { text-align: center; padding: 14px; color: var(--success); font-weight: 700; font-size: 13px; }
+
+.empty-state { text-align: center; padding: 50px 20px; color: var(--text-muted); }
+.empty-state .icon { font-size: 56px; opacity: 0.3; margin-bottom: 14px; display: block; }
+
+.hidden { display: none !important; }
+
+/* Tab content */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+@media (max-width: 1024px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .sidebar { position: static; max-height: 350px; }
+  .header { padding: 16px; }
+  .container { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-content">
+    <div>
+      <h1>📋 منظم جدول الاختبارات النهائية</h1>
+      <div class="subtitle">الكلية التقنية للبنات بالبدائع - غدي يوسف المكتوم</div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill"><div class="num" id="statCourses">0</div><div class="label">مقرر</div></div>
+      <div class="stat-pill"><div class="num" id="statPlaced">0</div><div class="label">مجدول</div></div>
+      <div class="stat-pill"><div class="num" id="statSupervisors">0</div><div class="label">مراقبة</div></div>
+      <div class="stat-pill"><div class="num" id="statConflicts">0</div><div class="label">تعارض</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('setup')">⚙️ الإعدادات</button>
+  <button class="tab-btn locked" onclick="switchTab('schedule')" id="tabBtn-schedule" disabled>📅 جدول الاختبارات</button>
+  <button class="tab-btn locked" onclick="switchTab('supervisors')" id="tabBtn-supervisors" disabled>👀 المراقبين</button>
+  <button class="tab-btn locked" onclick="switchTab('export')" id="tabBtn-export" disabled>📥 التصدير</button>
+</div>
+
+<div class="container">
+
+  <!-- Tab 1: Setup -->
+  <div class="tab-content active" id="tab-setup">
+    <div class="setup-section">
+      <h2>الخطوة 1: رفع الملفات</h2>
+      <p class="section-description">ارفعي الملفات الثلاثة (المتدربين، المعامل، المقررات). الملف الأول إلزامي والباقي اختياري.</p>
+
+      <div class="uploads-grid">
+        <div class="upload-zone required" id="uploadStudents" onclick="document.getElementById('fileStudents').click()">
+          <span class="badge">إلزامي</span>
+          <span class="icon">👥</span>
+          <p>قائمة المتدربين</p>
+          <div class="hint">CSV - المتدربين المسجلين في شعب تدريبية</div>
+          <span class="report-code">SF01</span>
+          <input type="file" id="fileStudents" accept=".csv" style="display:none">
+        </div>
+
+        <div class="upload-zone" id="uploadLabs" onclick="document.getElementById('fileLabs').click()">
+          <span class="badge" style="background:#3498DB; color:white;">اختياري</span>
+          <span class="icon">🏛️</span>
+          <p>جدول المعامل</p>
+          <div class="hint">CSV - المعامل وأرقامها وسعتها</div>
+          <span class="report-code">SS11</span>
+          <input type="file" id="fileLabs" accept=".csv" style="display:none">
+        </div>
+
+        <div class="upload-zone" id="uploadCourses" onclick="document.getElementById('fileCourses').click()">
+          <span class="badge" style="background:#3498DB; color:white;">اختياري</span>
+          <span class="icon">📚</span>
+          <p>جدول المقررات</p>
+          <div class="hint">CSV - الوحدة التدريبية الطولي</div>
+          <span class="report-code">SS01</span>
+          <input type="file" id="fileCourses" accept=".csv" style="display:none">
+        </div>
+      </div>
+
+      <div id="filesSummary" class="hidden" style="background:#F0F9F4; border-radius:12px; padding:14px; margin-top:14px; font-size:13px;"></div>
+    </div>
+
+    <div class="setup-section hidden" id="configBlock">
+      <h2>الخطوة 2: الإعدادات</h2>
+      <div class="config-grid">
+        <div class="config-item">
+          <label>عدد أيام الاختبارات</label>
+          <input type="number" id="numDays" value="10" min="1" max="30">
+        </div>
+        <div class="config-item">
+          <label>الفترات في اليوم</label>
+          <select id="numPeriods" onchange="renderPeriodTimes()">
+            <option value="1">فترة واحدة</option>
+            <option value="2">فترتين</option>
+            <option value="3" selected>ثلاث فترات</option>
+            <option value="4">أربع فترات</option>
+            <option value="5">خمس فترات</option>
+            <option value="6">ست فترات</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label>عدد المعامل</label>
+          <input type="number" id="numLabs" value="11" min="1">
+        </div>
+        <div class="config-item">
+          <label>سعة المعمل</label>
+          <input type="number" id="labCapacity" value="21" min="1">
+        </div>
+      </div>
+
+      <div style="background:#FAFAF7; border:1px solid var(--border); border-radius:10px; padding:14px; margin-top:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <strong style="font-size:13px; color:var(--primary);">⏰ أوقات الفترات</strong>
+          <button class="btn btn-secondary" onclick="resetPeriodTimes()" style="padding:4px 12px; font-size:11px;">↺ القيم الافتراضية</button>
+        </div>
+        <div id="periodTimesGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+          <!-- يُملأ ديناميكياً -->
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn btn-secondary" onclick="renderExcludeList(); document.getElementById('excludeModal').showModal()">
+          🚫 استبعاد مقررات
+        </button>
+        <button class="btn btn-secondary" onclick="document.getElementById('excludeInstructorsModal').showModal()">
+          👤 استبعاد مدربين
+        </button>
+        <button class="btn btn-secondary" onclick="renderManualInstructors(); document.getElementById('addInstructorsModal').showModal()">
+          ➕ إضافة مدربين
+        </button>
+        <button class="btn btn-secondary" onclick="renderSplitList(); document.getElementById('splitModal').showModal()">
+          ✂️ تقسيم المقررات المشتركة
+        </button>
+        <button class="btn btn-primary" onclick="initializeApp()">
+          🚀 ابدأ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 2: Schedule -->
+  <div class="tab-content" id="tab-schedule">
+    <div class="main-layout">
+      <div class="sidebar">
+        <h3>📚 المقررات المتاحة</h3>
+        <div class="search-box">
+          <input type="text" id="courseSearch" placeholder="ابحثي..." oninput="renderCoursePool()">
+        </div>
+        <div class="filter-tabs" id="filterTabs">
+          <button class="filter-tab active" data-filter="all" onclick="setFilter('all')">الكل</button>
+          <button class="filter-tab" data-filter="shared" onclick="setFilter('shared')">مشترك</button>
+          <button class="filter-tab" data-filter="unplaced" onclick="setFilter('unplaced')">غير موزع</button>
+          <button class="filter-tab" data-filter="excluded" onclick="setFilter('excluded')" style="border-color:var(--danger); color:var(--danger);">🚫 المستبعدة</button>
+        </div>
+        <div id="coursePool"></div>
+      </div>
+
+      <div>
+        <div class="grid-container">
+          <div class="grid-header-bar">
+            <h2>📅 جدول الاختبارات</h2>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-accent" onclick="autoDistribute()">⚡ توزيع تلقائي</button>
+              <button class="btn btn-danger" onclick="clearAll()">🗑️ مسح</button>
+            </div>
+          </div>
+          <div class="schedule-grid" id="scheduleGrid"></div>
+        </div>
+
+        <div class="conflicts-panel">
+          <h3>
+            <span>⚠️ التعارضات والتنبيهات</span>
+            <span id="conflictCount" style="font-size:12px; color:var(--text-muted);"></span>
+          </h3>
+          <div id="conflictsList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 3: Supervisors -->
+  <div class="tab-content" id="tab-supervisors">
+    <div class="main-layout">
+      <div class="sidebar">
+        <h3>👤 المدربون المتاحون</h3>
+        <div class="search-box">
+          <input type="text" id="instSearch" placeholder="ابحثي..." oninput="renderInstructorPool()">
+        </div>
+        <div id="instructorPool"></div>
+      </div>
+
+      <div>
+        <div class="grid-container">
+          <div class="grid-header-bar">
+            <h2>👀 جدول المراقبين</h2>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-accent" onclick="autoAssignSupervisors()">⚡ توزيع تلقائي</button>
+              <button class="btn btn-danger" onclick="clearSupervisors()">🗑️ مسح</button>
+            </div>
+          </div>
+          <p class="section-description" style="margin-bottom:8px;">اسحبي المدربة من القائمة على خانة المعمل في الفترة المطلوبة</p>
+          <div id="supervisorTables"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab 4: Export -->
+  <div class="tab-content" id="tab-export">
+    <div class="setup-section">
+      <h2>تصدير الجدول</h2>
+      <p class="section-description">اختاري ما تبغين تصديره وبأي صيغة</p>
+      
+      <div style="margin-bottom:20px;">
+        <h3 style="font-family:'Cairo'; font-size:15px; color:var(--primary); margin-bottom:10px;">📊 صيغة Excel</h3>
+        <div class="actions-row">
+          <button class="btn btn-primary" onclick="exportFullExcel()">
+            📥 Excel شامل
+          </button>
+          <button class="btn btn-secondary" onclick="exportScheduleOnly()">
+            📋 الجدول فقط
+          </button>
+          <button class="btn btn-secondary" onclick="exportSupervisorsOnly()">
+            👀 المراقبين فقط
+          </button>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:20px;">
+        <h3 style="font-family:'Cairo'; font-size:15px; color:var(--primary); margin-bottom:10px;">📄 صيغة PDF (بتنسيق رسمي)</h3>
+        
+        <div style="background:#FAFAF7; border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px;">
+          <div style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">معلومات تظهر على الترويسة:</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div class="config-item">
+              <label>اسم الكلية</label>
+              <input type="text" id="pdfCollege" value="الكلية التقنية للبنات بالبدائع" style="font-size:12px;">
+            </div>
+            <div class="config-item">
+              <label>اسم الكلية بالإنجليزي</label>
+              <input type="text" id="pdfCollegeEn" value="Albdayea Technical College for Girls" style="font-size:12px;">
+            </div>
+            <div class="config-item">
+              <label>القسم</label>
+              <input type="text" id="pdfDept" value="جميع الأقسام" style="font-size:12px;">
+            </div>
+            <div class="config-item">
+              <label>التخصص</label>
+              <input type="text" id="pdfMajor" value="جميع التخصصات" style="font-size:12px;">
+            </div>
+            <div class="config-item">
+              <label>الفصل التدريبي</label>
+              <input type="text" id="pdfSemester" value="الفصل التدريبي الثاني 1447 هـ" style="font-size:12px;">
+            </div>
+            <div class="config-item">
+              <label>تاريخ بداية الاختبارات (هجري)</label>
+              <div style="display:flex; gap:6px; align-items:center;">
+                <input type="text" id="pdfStartDate" placeholder="مثلاً: 1447/12/22" style="flex:1; font-size:12px;" oninput="updateStartDayPreview()">
+                <button type="button" onclick="openHijriCalendar()" 
+                        style="padding:6px 10px; background:#2D8659; color:white; border:none; border-radius:6px; cursor:pointer; font-size:14px;" 
+                        title="افتح التقويم">📅</button>
+              </div>
+              <div id="startDayPreview" style="font-size:11px; color:#2D8659; margin-top:4px; font-weight:700;"></div>
+            </div>
+            <div class="config-item">
+              <label>يوم بداية الاختبارات</label>
+              <select id="pdfStartDay" style="font-size:12px;">
+                <option value="0">الأحد</option>
+                <option value="1">الاثنين</option>
+                <option value="2">الثلاثاء</option>
+                <option value="3">الأربعاء</option>
+                <option value="4">الخميس</option>
+              </select>
+            </div>
+          </div>
+          
+          <div style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--border);">
+            <div style="font-size:12px; color:var(--text-muted); margin-bottom:8px;">شعار الترويسة (اختياري):</div>
+            <div class="config-item">
+              <label>شعار المؤسسة / الكلية</label>
+              <input type="file" id="pdfLogoCollege" accept="image/*" style="font-size:11px;" onchange="loadLogo('pdfLogoCollege', 'collegeLogoPreview')">
+              <div id="collegeLogoPreview" style="margin-top:6px;"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="actions-row">
+          <button class="btn btn-primary" onclick="exportSchedulePDF()" style="background:#C0392B;">
+            📋 جدول الاختبارات (PDF)
+          </button>
+          <button class="btn btn-secondary" onclick="exportSupervisorsPDF()">
+            👀 جدول المراقبين (PDF)
+          </button>
+        </div>
+      </div>
+
+      <div id="exportPreview" style="margin-top:20px; padding:16px; background:#FAFAF7; border-radius:10px; font-size:13px;">
+        <strong>معاينة الإحصائيات:</strong>
+        <div id="exportStats" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notifications" id="notifications"></div>
+
+<!-- Exclude courses modal -->
+<dialog id="excludeModal" style="border:none; border-radius:14px; padding:0; max-width:600px; width:90%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:var(--primary); margin-bottom:8px;">🚫 استبعاد مقررات</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+      المقررات المعلّمة بـ <span style="background:#FFE4E1; color:var(--danger); padding:1px 6px; border-radius:4px; font-size:11px; font-weight:700;">تلقائي</span> 
+      مستبعدة تلقائياً (مشروع، تدريب تعاوني، تدريب ميداني، عملي). يمكنك إضافة أو إلغاء استبعادات يدوياً.
+    </p>
+    <input type="text" id="excludeSearch" placeholder="ابحثي..." 
+           style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px; margin-bottom:10px;"
+           oninput="filterExcludeList()">
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button class="btn btn-secondary" onclick="selectAllExclude(true)" style="flex:1; padding:6px; font-size:12px;">تحديد الكل</button>
+      <button class="btn btn-secondary" onclick="selectAllExclude(false)" style="flex:1; padding:6px; font-size:12px;">إلغاء التحديد</button>
+    </div>
+    <div id="excludeList" style="max-height:380px; overflow-y:auto; margin-bottom:14px;"></div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="document.getElementById('excludeModal').close()">إلغاء</button>
+      <button class="btn btn-primary" onclick="applyExclusions()">تطبيق</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Exclude instructors modal -->
+<dialog id="excludeInstructorsModal" style="border:none; border-radius:14px; padding:0; max-width:500px; width:90%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:var(--primary); margin-bottom:14px;">استبعاد مدربين من المراقبة</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">المدربون المختارون لن يكونوا من ضمن المراقبين</p>
+    <div id="excludeInstructorsList" style="max-height:400px; overflow-y:auto; margin-bottom:14px;"></div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="document.getElementById('excludeInstructorsModal').close()">إلغاء</button>
+      <button class="btn btn-primary" onclick="applyInstructorExclusions()">تطبيق</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="hijriCalendarModal" style="border:none; border-radius:14px; padding:0; max-width:380px; width:90%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:#2D8659; margin-bottom:8px;">📅 التقويم الهجري</h2>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">اختاري تاريخ بداية الاختبارات</p>
+    
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding:8px; background:#F0F8F3; border-radius:8px;">
+      <button type="button" onclick="hijriCalNav(-1)" style="background:#2D8659; color:white; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:14px;">◀</button>
+      <div style="font-weight:700; color:#1A5A38; font-size:14px;">
+        <span id="hijriCalMonth"></span> <span id="hijriCalYear"></span>
+      </div>
+      <button type="button" onclick="hijriCalNav(1)" style="background:#2D8659; color:white; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:14px;">▶</button>
+    </div>
+    
+    <div id="hijriCalGrid" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:3px; margin-bottom:14px;"></div>
+    
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px; padding:10px; background:#FAF6E8; border-radius:8px; font-size:12px;">
+      <strong>📌 المختار:</strong>
+      <span id="hijriCalSelected" style="color:#2D8659; font-weight:700;">لم يُختر بعد</span>
+    </div>
+    
+    <div style="display:flex; gap:8px; align-items:center; margin-bottom:14px;">
+      <label style="font-size:12px;">السنة:</label>
+      <input type="number" id="hijriCalYearInput" value="1447" min="1440" max="1500" 
+             onchange="hijriCalGoToYear()" style="width:70px; padding:5px; border:1px solid #ccc; border-radius:6px; font-size:12px;">
+      <label style="font-size:12px;">الشهر:</label>
+      <select id="hijriCalMonthInput" onchange="hijriCalGoToMonth()" style="flex:1; padding:5px; border:1px solid #ccc; border-radius:6px; font-size:12px;">
+        <option value="1">المحرم</option>
+        <option value="2">صفر</option>
+        <option value="3">ربيع الأول</option>
+        <option value="4">ربيع الآخر</option>
+        <option value="5">جمادى الأولى</option>
+        <option value="6">جمادى الآخرة</option>
+        <option value="7">رجب</option>
+        <option value="8">شعبان</option>
+        <option value="9">رمضان</option>
+        <option value="10">شوال</option>
+        <option value="11">ذو القعدة</option>
+        <option value="12">ذو الحجة</option>
+      </select>
+    </div>
+    
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="document.getElementById('hijriCalendarModal').close()">إلغاء</button>
+      <button class="btn btn-primary" onclick="confirmHijriDate()" style="background:#2D8659;">تأكيد</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="addInstructorsModal" style="border:none; border-radius:14px; padding:0; max-width:550px; width:90%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:var(--primary); margin-bottom:8px;">➕ إضافة مدربين يدوياً</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      أضيفي مدربين غير مسجلين في ملف CSV ليكونوا متاحين للمراقبة
+    </p>
+    
+    <div style="background:#F8FAF9; border:1px dashed var(--border); border-radius:10px; padding:14px; margin-bottom:14px;">
+      <label style="font-size:12px; font-weight:700; color:var(--primary); display:block; margin-bottom:6px;">
+        اسم المدرب/المدربة
+      </label>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="newInstructorName" placeholder="مثل: سارة محمد العلي" 
+               onkeypress="if(event.key==='Enter') addManualInstructor()"
+               style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;">
+        <button class="btn btn-primary" onclick="addManualInstructor()" style="padding:8px 18px;">
+          إضافة
+        </button>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:6px;">
+        💡 يمكنك إضافة عدة أسماء مفصولة بفاصلة أو سطر جديد
+      </div>
+    </div>
+    
+    <div style="margin-bottom:8px; font-size:12px; font-weight:700; color:var(--text);">
+      المدربين المضافين يدوياً (<span id="manualInstructorsCount">0</span>):
+    </div>
+    <div id="manualInstructorsList" style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:8px;"></div>
+    
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('addInstructorsModal').close()">إغلاق</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+// ============ State ============
+let courses = [];
+let students = {};
+let instructors = [];
+let manualInstructors = []; // المدربين المضافين يدوياً (غير الموجودين في CSV)
+let labs = [];
+let placements = {};       // courseCode -> slotIdx
+let supervisors = {};      // `${slotIdx}|${labCode}` -> instructorName
+let excludedCourses = new Set();
+let excludedInstructors = new Set();
+let splitCourses = new Set(); // courses that should be split by specialty
+let currentFilter = 'all';
+let conflicts = [];
+
+let CONFIG = {
+  numDays: 10,
+  numPeriods: 3,
+  numLabs: 11,
+  labCapacity: 21,
+};
+
+// أوقات الفترات الافتراضية (قابلة للتعديل من المستخدم)
+const DEFAULT_PERIOD_TIMES = {
+  1: [{ start: '8:00 ص', end: '9:30 ص' }],
+  2: [{ start: '8:00 ص', end: '9:30 ص' }, { start: '10:00 ص', end: '11:30 ص' }],
+  3: [{ start: '8:00 ص', end: '9:30 ص' }, { start: '10:00 ص', end: '11:30 ص' }, { start: '12:00 م', end: '1:30 م' }],
+  4: [{ start: '8:00 ص', end: '9:30 ص' }, { start: '10:00 ص', end: '11:30 ص' }, { start: '12:00 م', end: '1:30 م' }, { start: '2:00 م', end: '3:30 م' }],
+  5: [{ start: '8:00 ص', end: '9:30 ص' }, { start: '10:00 ص', end: '11:30 ص' }, { start: '12:00 م', end: '1:30 م' }, { start: '2:00 م', end: '3:30 م' }, { start: '4:00 م', end: '5:30 م' }],
+  6: [{ start: '8:00 ص', end: '9:30 ص' }, { start: '10:00 ص', end: '11:30 ص' }, { start: '12:00 م', end: '1:30 م' }, { start: '2:00 م', end: '3:30 م' }, { start: '4:00 م', end: '5:30 م' }, { start: '6:00 م', end: '7:30 م' }],
+};
+
+// أوقات الفترات الحالية (يبدأ بافتراضي 3 فترات)
+let CURRENT_PERIODS = DEFAULT_PERIOD_TIMES[3].map(p => ({ ...p }));
+
+// نسخة تتوافق مع الكود القديم (نص "8:00 - 9:30 ص")
+const PERIOD_TIMES = new Proxy({}, {
+  get(target, prop) {
+    const n = parseInt(prop);
+    if (isNaN(n)) return undefined;
+    // إذا الطلب على عدد الفترات الحالي، نرجع CURRENT_PERIODS
+    if (n === CURRENT_PERIODS.length) {
+      return CURRENT_PERIODS.map(p => `${p.start} - ${p.end}`);
+    }
+    // وإلا نرجع الافتراضي
+    const def = DEFAULT_PERIOD_TIMES[n] || [];
+    return def.map(p => `${p.start} - ${p.end}`);
+  }
+});
+
+function renderPeriodTimes() {
+  const num = parseInt(document.getElementById('numPeriods').value);
+  // نأخذ الافتراضي للعدد الجديد، لكن نحاول الاحتفاظ بالقيم اللي تم تعديلها
+  const newPeriods = [];
+  for (let i = 0; i < num; i++) {
+    if (CURRENT_PERIODS[i]) {
+      newPeriods.push({ ...CURRENT_PERIODS[i] });
+    } else {
+      const defaults = DEFAULT_PERIOD_TIMES[num] || DEFAULT_PERIOD_TIMES[3];
+      newPeriods.push({ ...(defaults[i] || { start: '', end: '' }) });
+    }
+  }
+  CURRENT_PERIODS = newPeriods;
+  
+  const grid = document.getElementById('periodTimesGrid');
+  if (!grid) return;
+  
+  grid.innerHTML = CURRENT_PERIODS.map((p, i) => `
+    <div style="background:white; border:1px solid var(--border); border-radius:8px; padding:10px;">
+      <div style="font-size:11px; font-weight:700; color:var(--primary); margin-bottom:6px;">الفترة ${i + 1}</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <div>
+          <label style="font-size:10px; color:var(--text-muted); display:block; margin-bottom:2px;">من</label>
+          <input type="text" value="${p.start}" placeholder="مثل 8:00 ص"
+                 onchange="updatePeriodTime(${i}, 'start', this.value)"
+                 style="width:100%; padding:5px 8px; border:1px solid var(--border); border-radius:6px; font-size:11px; font-family:inherit;">
+        </div>
+        <div>
+          <label style="font-size:10px; color:var(--text-muted); display:block; margin-bottom:2px;">إلى</label>
+          <input type="text" value="${p.end}" placeholder="مثل 9:30 ص"
+                 onchange="updatePeriodTime(${i}, 'end', this.value)"
+                 style="width:100%; padding:5px 8px; border:1px solid var(--border); border-radius:6px; font-size:11px; font-family:inherit;">
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function updatePeriodTime(index, field, value) {
+  if (CURRENT_PERIODS[index]) {
+    CURRENT_PERIODS[index][field] = value.trim();
+  }
+}
+
+function resetPeriodTimes() {
+  const num = parseInt(document.getElementById('numPeriods').value);
+  const defaults = DEFAULT_PERIOD_TIMES[num] || DEFAULT_PERIOD_TIMES[3];
+  CURRENT_PERIODS = defaults.map(p => ({ ...p }));
+  renderPeriodTimes();
+}
+
+// تحويل رقم/رمز المعمل لآخر رقمين أو ثلاثة فقط
+// أمثلة: "LAB-12-001" → "01"، "معمل 27 027" → "27"، "LAB-027" → "27"
+function shortLabNumber(labCodeOrDesc) {
+  if (!labCodeOrDesc) return '';
+  // نستخرج كل الأرقام
+  const digits = String(labCodeOrDesc).replace(/[^\d]/g, '');
+  if (!digits) return '';
+  // نأخذ آخر رقمين (أو 3 لو الرقم 3 أرقام بدون أصفار في البداية)
+  if (digits.length <= 2) return digits;
+  // آخر رقمين، لكن لو الرقمين الأخيرين "00" نأخذ من قبلهم
+  let result = digits.slice(-2);
+  // إذا كانت الأرقام بشكل "027" (3 أرقام والأول صفر) نشيل الصفر
+  if (digits.length === 3 && digits[0] === '0') {
+    result = digits.slice(1); // "27"
+  }
+  return result;
+}
+
+// ============ Utility: استنباط المستوى ============
+function extractLevel(courseCode) {
+  // مثال: سلام-111 → المستوى 1، انجل-204 → المستوى 2
+  // نأخذ الجزء بعد الـ - أو _
+  const parts = courseCode.split(/[-_]/);
+  let numPart = '';
+  if (parts.length >= 2) {
+    numPart = parts[1].match(/\d+/)?.[0] || '';
+  } else {
+    numPart = courseCode.match(/\d+/)?.[0] || '';
+  }
+  if (!numPart) return null;
+  return numPart.charAt(0); // أول رقم من الرقم
+}
+
+// ============ File Upload ============
+function setupUpload(zoneId, inputId, handler) {
+  const zone = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--primary)'; });
+  zone.addEventListener('dragleave', () => zone.style.borderColor = '');
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.style.borderColor = '';
+    if (e.dataTransfer.files.length) {
+      input.files = e.dataTransfer.files;
+      handler(e.dataTransfer.files[0]);
+    }
+  });
+  input.addEventListener('change', e => { if (e.target.files.length) handler(e.target.files[0]); });
+}
+
+setupUpload('uploadStudents', 'fileStudents', loadStudentsFile);
+setupUpload('uploadLabs', 'fileLabs', loadLabsFile);
+setupUpload('uploadCourses', 'fileCourses', loadCoursesFile);
+
+function parseCSV(file, callback) {
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => callback(results.data),
+    error: (err) => showNotification('error', 'خطأ في القراءة', err.message)
+  });
+}
+
+function loadStudentsFile(file) {
+  parseCSV(file, (data) => {
+    window._lastStudentData = data; // نخزنها عشان نعيد المعالجة عند التقسيم
+    processStudents(data);
+    document.getElementById('uploadStudents').classList.add('has-file');
+    document.getElementById('uploadStudents').querySelector('p').textContent = '✓ ' + file.name;
+    showFilesSummary();
+    document.getElementById('configBlock').classList.remove('hidden');
+    renderPeriodTimes();
+  });
+}
+
+function loadLabsFile(file) {
+  parseCSV(file, (data) => {
+    processLabs(data);
+    document.getElementById('uploadLabs').classList.add('has-file');
+    document.getElementById('uploadLabs').querySelector('p').textContent = '✓ ' + file.name;
+    showFilesSummary();
+  });
+}
+
+function loadCoursesFile(file) {
+  parseCSV(file, (data) => {
+    // ملف الوحدة التدريبية - يمكن استخدامه لإثراء معلومات المقررات
+    showFilesSummary();
+    document.getElementById('uploadCourses').classList.add('has-file');
+    document.getElementById('uploadCourses').querySelector('p').textContent = '✓ ' + file.name;
+  });
+}
+
+function processStudents(data) {
+  const cols = Object.keys(data[0] || {});
+  const findCol = (...names) => cols.find(c => names.some(n => c.includes(n)));
+  const colCourse = findCol('المقرر');
+  const colCourseName = findCol('اسم المقرر');
+  const colSection = findCol('الرقم المرجعي');
+  const colStudent = findCol('رقم المتدرب');
+  const colStudentName = findCol('إسم المتدرب', 'اسم المتدرب');
+  const colInstructor = findCol('المدرب');
+  const colSpecialty = findCol('التخصص');
+  const colRegStatus = findCol('حالة تسجيل');
+  const colStudentStatus = findCol('حالة المتدرب');
+  const colScheduleType = findCol('نوع الجدولة', 'نوع التدريب');
+
+  if (!colCourse || !colSection || !colStudent) {
+    showNotification('error', 'أعمدة ناقصة', 'يحتاج: المقرر، الرقم المرجعي، رقم المتدرب');
+    return;
+  }
+
+  // نستبعد فقط: المنسحبات والمطوي قيدها
+  // نُبقي: المستمرة، معاد قيدها، المحرومات
+  const excludedRegStatusKeywords = ['انسحاب', 'مطوي'];
+
+  const sectionsMap = {};
+  const coursesMap = {};
+  const instructorsSet = new Set();
+  students = {};
+  let skippedCount = 0;
+
+  for (const row of data) {
+    const courseCode = (row[colCourse] || '').trim();
+    const sectionId = (row[colSection] || '').toString().trim();
+    const studentId = (row[colStudent] || '').toString().trim();
+    if (!courseCode || !sectionId || !studentId) continue;
+
+    // استبعاد المنسحبات والمطوي قيدها فقط
+    if (colRegStatus) {
+      const regStatus = (row[colRegStatus] || '').trim();
+      if (excludedRegStatusKeywords.some(kw => regStatus.includes(kw))) {
+        skippedCount++;
+        continue;
+      }
+    }
+
+    if (!sectionsMap[sectionId]) {
+      sectionsMap[sectionId] = {
+        id: sectionId,
+        course: courseCode,
+        students: new Set(),
+        instructor: colInstructor ? (row[colInstructor] || '').trim() : '',
+        specialty: colSpecialty ? (row[colSpecialty] || '').trim() : '',
+        scheduleType: colScheduleType ? (row[colScheduleType] || '').trim() : '',
+      };
+    }
+    sectionsMap[sectionId].students.add(studentId);
+    if (colInstructor && row[colInstructor]) instructorsSet.add(row[colInstructor].trim());
+
+    if (!coursesMap[courseCode]) {
+      coursesMap[courseCode] = {
+        code: courseCode,
+        name: (row[colCourseName] || '').trim(),
+        sections: [],
+        specialties: new Set(),
+      };
+    }
+    if (sectionsMap[sectionId].specialty) {
+      coursesMap[courseCode].specialties.add(sectionsMap[sectionId].specialty);
+    }
+
+    if (!students[studentId]) {
+      students[studentId] = {
+        id: studentId,
+        name: colStudentName ? (row[colStudentName] || '').trim() : '',
+        sections: new Set(),
+      };
+    }
+    students[studentId].sections.add(sectionId);
+  }
+
+  for (const sec of Object.values(sectionsMap)) coursesMap[sec.course].sections.push(sec);
+
+  // اكتشاف التخصصات الفريدة
+  const allSpecialties = new Set();
+  Object.values(sectionsMap).forEach(s => { if (s.specialty) allSpecialties.add(s.specialty); });
+  window._discoveredSpecialties = [...allSpecialties].sort();
+
+  // كلمات الاستبعاد:
+  // 1. اسم المقرر: مشروع
+  // 2. نوع الجدولة في كل الشعب: ذاتي، تعاوني، مشروع، أو عملي بحت (بدون نظري)
+  const courseNameExcludeKw = ['مشروع'];
+  const scheduleTypeExcludeKw = ['ذاتي', 'تعاوني', 'مشروع'];
+
+  courses = Object.values(coursesMap).map(c => {
+    const specs = [...c.specialties];
+    let specType = specs.length > 1 ? 'shared' : (specs[0] || 'other');
+
+    const courseName = c.name || '';
+    let isAutoExcluded = courseNameExcludeKw.some(kw => courseName.includes(kw));
+
+    // فحص أنواع الجدولة لشعب المقرر
+    if (!isAutoExcluded && c.sections.length > 0) {
+      const scheduleTypes = c.sections.map(s => (s.scheduleType || '').toLowerCase());
+      
+      // كل الشعب نوعها ذاتي/تعاوني/مشروع → استبعد
+      const allMatchKw = scheduleTypes.every(st => 
+        scheduleTypeExcludeKw.some(kw => st.includes(kw))
+      );
+      if (allMatchKw && scheduleTypes.length > 0 && scheduleTypes.some(st => st)) {
+        isAutoExcluded = true;
+      }
+      
+      // كل الشعب "عملي" بدون نظري → استبعد
+      const hasOnlyPractical = scheduleTypes.every(st => st.includes('عملي')) && 
+                                !scheduleTypes.some(st => st.includes('نظري'));
+      if (hasOnlyPractical && scheduleTypes.length > 0 && scheduleTypes.some(st => st)) {
+        isAutoExcluded = true;
+      }
+    }
+
+    if (isAutoExcluded) excludedCourses.add(c.code);
+
+    const allStudents = new Set();
+    c.sections.forEach(s => s.students.forEach(st => allStudents.add(st)));
+    return {
+      ...c,
+      specType,
+      specialtiesList: specs,
+      isSplit: false,
+      autoExcluded: isAutoExcluded,
+      totalStudents: allStudents.size,
+      labsNeeded: Math.ceil(allStudents.size / CONFIG.labCapacity),
+    };
+  });
+  courses.sort((a, b) => a.code.localeCompare(b.code));
+
+  // ندمج مدربي CSV مع المدربين اليدويين المضافين
+  instructors = [...new Set([...instructorsSet, ...manualInstructors])].sort();
+
+  renderExcludeList();
+  renderInstructorExcludeList();
+  renderSplitList();
+  buildDynamicFilters();
+}
+
+function renderSplitList() {
+  // نعرض كل المقررات المشتركة (حتى المستبعدة)
+  const sharedCourses = [];
+  for (const c of courses) {
+    if (c.isSplit) {
+      // كتلة منقسمة - نتعامل مع المقرر الأصلي
+      let entry = sharedCourses.find(x => x.code === c.baseCode);
+      if (!entry) {
+        entry = {
+          code: c.baseCode,
+          name: c.name,
+          totalStudents: 0,
+          isCurrentlySplit: true,
+          isExcluded: excludedCourses.has(c.baseCode) || excludedCourses.has(c.code),
+          specialties: new Set(),
+        };
+        sharedCourses.push(entry);
+      }
+      // نجمع تخصصات كل الكتل المنقسمة
+      (c.specialtiesList || []).forEach(sp => entry.specialties.add(sp));
+    } else if (c.specType === 'shared') {
+      sharedCourses.push({
+        code: c.code,
+        name: c.name,
+        totalStudents: c.totalStudents,
+        isCurrentlySplit: false,
+        isExcluded: excludedCourses.has(c.code),
+        specialties: new Set(c.specialtiesList || []),
+      });
+    }
+  }
+
+  // لكل مقرر منقسم، احسبي إجمالي الطلاب
+  for (const sc of sharedCourses) {
+    if (sc.isCurrentlySplit) {
+      sc.totalStudents = courses
+        .filter(c => c.baseCode === sc.code)
+        .reduce((sum, c) => sum + c.totalStudents, 0);
+    }
+  }
+
+  // ترتيب: المستبعدة في الأخير
+  sharedCourses.sort((a, b) => {
+    if (a.isExcluded !== b.isExcluded) return a.isExcluded ? 1 : -1;
+    return a.code.localeCompare(b.code);
+  });
+
+  const list = document.getElementById('splitList');
+  if (sharedCourses.length === 0) {
+    list.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted);">لا توجد مقررات مشتركة بين التخصصات</div>';
+    return;
+  }
+
+  list.innerHTML = sharedCourses.map(c => {
+    const checked = splitCourses.has(c.code) ? 'checked' : '';
+    const excludedTag = c.isExcluded ? `<span style="background:#FFE4E1; color:var(--danger); padding:2px 8px; border-radius:6px; font-size:10px; font-weight:700;">🚫 مستبعد</span>` : '';
+    const opacity = c.isExcluded ? 'opacity:0.6;' : '';
+    
+    // بناء وسوم التخصصات بألوانها المميزة
+    const specsArr = [...c.specialties];
+    const specTags = specsArr.map(sp => {
+      const col = (typeof getSpecColor === 'function') ? getSpecColor(sp) : { border: '#888', bg: '#f0f0f0' };
+      // اختصار الاسم لو طويل
+      const shortName = sp.length > 18 ? sp.substring(0, 16) + '…' : sp;
+      return `<span style="background:${col.bg}; color:${col.border}; padding:2px 8px; border-radius:5px; font-size:10px; font-weight:700; border:1px solid ${col.border};" title="${sp}">${shortName}</span>`;
+    }).join(' ');
+    
+    return `
+      <label style="display:flex; align-items:center; gap:8px; padding:10px; border-bottom:1px solid var(--border); cursor:pointer; flex-wrap:wrap; ${opacity}">
+        <input type="checkbox" data-course="${c.code}" ${checked}>
+        <strong style="font-size:13px;">${c.code}</strong>
+        <span style="flex:1; min-width:120px; font-size:13px;">${c.name}</span>
+        <div style="display:flex; gap:4px; flex-wrap:wrap;">${specTags}</div>
+        ${excludedTag}
+        <span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${c.totalStudents} طالبة</span>
+      </label>
+    `;
+  }).join('');
+}
+
+function filterExcludeList() {
+  const q = (document.getElementById('excludeSearch').value || '').toLowerCase();
+  document.querySelectorAll('#excludeList label').forEach(l => {
+    const text = l.textContent.toLowerCase();
+    l.style.display = (!q || text.includes(q)) ? 'flex' : 'none';
+  });
+}
+
+function selectAllExclude(checked) {
+  document.querySelectorAll('#excludeList label').forEach(l => {
+    if (l.style.display !== 'none') {
+      const cb = l.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = checked;
+    }
+  });
+}
+
+function selectAllSplit(checked) {
+  document.querySelectorAll('#splitList input[type="checkbox"]').forEach(c => c.checked = checked);
+}
+
+function applySplits() {
+  splitCourses = new Set([...document.querySelectorAll('#splitList input:checked')].map(c => c.dataset.course));
+  document.getElementById('splitModal').close();
+  
+  // أعيدي معالجة البيانات الأصلية ثم طبقي التقسيم
+  if (!window._lastStudentData) return;
+  
+  placements = {};
+  supervisors = {};
+  processStudents(window._lastStudentData);
+  
+  // طبقي التقسيم
+  if (splitCourses.size > 0) {
+    const finalCourses = [];
+    for (const c of courses) {
+      if (c.specType === 'shared' && splitCourses.has(c.code)) {
+        // قسّمي حسب التخصصات الفعلية في الشعب
+        const bySpec = {};
+        c.sections.forEach(sec => {
+          const sp = sec.specialty || 'غير محدد';
+          if (!bySpec[sp]) bySpec[sp] = [];
+          bySpec[sp].push(sec);
+        });
+        
+        for (const [sp, secList] of Object.entries(bySpec)) {
+          const studs = new Set();
+          secList.forEach(s => s.students.forEach(st => studs.add(st)));
+          if (studs.size === 0) continue;
+          
+          // اختصار اسم التخصص للسوفكس
+          const suffix = sp.length > 15 ? sp.substring(0, 12) : sp;
+          
+          finalCourses.push({
+            code: `${c.code}-${suffix}`,
+            baseCode: c.code,
+            name: c.name,
+            sections: secList,
+            specialties: new Set([sp]),
+            specialtiesList: [sp],
+            specType: sp,  // التخصص الفعلي
+            isSplit: true,
+            splitGroup: c.code,
+            autoExcluded: c.autoExcluded,
+            totalStudents: studs.size,
+            labsNeeded: Math.ceil(studs.size / CONFIG.labCapacity),
+          });
+          if (c.autoExcluded) excludedCourses.add(`${c.code}-${suffix}`);
+        }
+      } else {
+        finalCourses.push(c);
+      }
+    }
+    courses = finalCourses.sort((a, b) => a.code.localeCompare(b.code));
+  }
+  
+  if (document.getElementById('tab-schedule').classList.contains('active')) {
+    renderCoursePool();
+    renderScheduleGrid();
+  }
+  renderExcludeList();
+  buildDynamicFilters();
+  
+  showNotification('success', '✓ تم التقسيم', `${splitCourses.size} مقرر مقسم حسب التخصص`);
+}
+
+function processLabs(data) {
+  const cols = Object.keys(data[0] || {});
+  const findCol = (...names) => cols.find(c => names.some(n => c.includes(n)));
+  const colCode = findCol('رمز القاعة', 'رمز القاعه');
+  const colDesc = findCol('وصف القاعة', 'وصف القاعه');
+  const colCap = findCol('السعة');
+
+  if (!colCode || !colDesc) {
+    showNotification('warning', 'الملف غير متوافق', 'لم نعثر على أعمدة المعامل');
+    return;
+  }
+
+  const labsMap = {};
+  for (const row of data) {
+    const code = (row[colCode] || '').toString().trim();
+    const desc = (row[colDesc] || '').trim();
+    if (!code || !desc) continue;
+    if (!desc.includes('معمل')) continue;
+    if (!labsMap[code]) {
+      labsMap[code] = {
+        code,
+        desc,
+        capacity: parseInt(row[colCap]) || CONFIG.labCapacity,
+      };
+    }
+  }
+
+  labs = Object.values(labsMap).sort((a, b) => a.code.localeCompare(b.code));
+  if (labs.length > 0) {
+    document.getElementById('numLabs').value = labs.length;
+    CONFIG.numLabs = labs.length;
+  }
+}
+
+function showFilesSummary() {
+  const lines = [];
+  if (courses.length > 0) lines.push(`✓ ${courses.length} مقرر، ${Object.keys(students).length} متدربة، ${instructors.length} مدربة`);
+  if (labs.length > 0) lines.push(`✓ ${labs.length} معمل`);
+  
+  const summary = document.getElementById('filesSummary');
+  if (lines.length > 0) {
+    summary.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+    summary.classList.remove('hidden');
+  }
+}
+
+// ============ Exclude lists ============
+function renderExcludeList() {
+  document.getElementById('excludeList').innerHTML = courses.map(c => {
+    const autoTag = c.autoExcluded ? `<span class="meta-pill" style="background:#FFE4E1; color:var(--danger); font-size:10px; font-weight:700;">تلقائي</span>` : '';
+    return `
+    <label style="display:flex; align-items:center; gap:8px; padding:8px; border-bottom:1px solid var(--border); cursor:pointer;">
+      <input type="checkbox" data-course="${c.code}" ${excludedCourses.has(c.code) ? 'checked' : ''}>
+      <strong>${c.code}</strong>
+      <span style="flex:1; font-size:13px;">${c.name}</span>
+      ${autoTag}
+      <span style="font-size:11px; color:var(--text-muted);">${c.totalStudents}</span>
+    </label>
+  `;}).join('');
+}
+
+function renderInstructorExcludeList() {
+  document.getElementById('excludeInstructorsList').innerHTML = instructors.map(i => `
+    <label style="display:flex; align-items:center; gap:8px; padding:8px; border-bottom:1px solid var(--border); cursor:pointer;">
+      <input type="checkbox" data-instructor="${i}" ${excludedInstructors.has(i) ? 'checked' : ''}>
+      <span style="flex:1; font-size:13px;">${i}</span>
+    </label>
+  `).join('');
+}
+
+function applyExclusions() {
+  excludedCourses = new Set([...document.querySelectorAll('#excludeList input:checked')].map(c => c.dataset.course));
+  document.getElementById('excludeModal').close();
+  showNotification('success', 'تم التطبيق', `${excludedCourses.size} مقرر مستبعد`);
+}
+
+function applyInstructorExclusions() {
+  excludedInstructors = new Set([...document.querySelectorAll('#excludeInstructorsList input:checked')].map(c => c.dataset.instructor));
+  document.getElementById('excludeInstructorsModal').close();
+  showNotification('success', 'تم التطبيق', `${excludedInstructors.size} مدربة مستبعدة`);
+}
+
+// ============ إدارة المدربين اليدويين ============
+function addManualInstructor() {
+  const input = document.getElementById('newInstructorName');
+  const value = input.value.trim();
+  if (!value) return;
+  
+  // ندعم الإدخال المتعدد (مفصول بفاصلة أو سطر جديد)
+  const names = value.split(/[,،\n]/).map(n => n.trim()).filter(n => n.length > 0);
+  
+  let added = 0;
+  let duplicate = 0;
+  for (const name of names) {
+    // فحص التكرار
+    if (manualInstructors.includes(name) || instructors.includes(name)) {
+      duplicate++;
+      continue;
+    }
+    manualInstructors.push(name);
+    added++;
+  }
+  
+  // تحديث قائمة المدربين الكاملة
+  rebuildInstructorsList();
+  
+  input.value = '';
+  renderManualInstructors();
+  
+  if (added > 0) {
+    showNotification('success', '✓ تمت الإضافة', `تم إضافة ${added} مدرب${duplicate > 0 ? ` (${duplicate} مكرر)` : ''}`);
+  } else if (duplicate > 0) {
+    showNotification('warning', 'تم التجاهل', `${duplicate} اسم موجود مسبقاً`);
+  }
+}
+
+function removeManualInstructor(name) {
+  manualInstructors = manualInstructors.filter(n => n !== name);
+  rebuildInstructorsList();
+  renderManualInstructors();
+  showNotification('info', 'تمت الإزالة', name);
+}
+
+function rebuildInstructorsList() {
+  // ندمج مدربين CSV مع المدربين اليدويين
+  const fromCSV = instructors.filter(n => !manualInstructors.includes(n));
+  // نحفظ instructors بالـ CSV الأصلي + اليدويين
+  instructors = [...new Set([...fromCSV, ...manualInstructors])].sort();
+  // إعادة رسم قائمة الاستبعاد إذا كانت مفتوحة
+  if (typeof renderInstructorExcludeList === 'function') {
+    renderInstructorExcludeList();
+  }
+}
+
+function renderManualInstructors() {
+  const list = document.getElementById('manualInstructorsList');
+  const count = document.getElementById('manualInstructorsCount');
+  if (!list || !count) return;
+  
+  count.textContent = manualInstructors.length;
+  
+  if (manualInstructors.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">
+      لم تتم إضافة أي مدربين بعد
+    </div>`;
+    return;
+  }
+  
+  list.innerHTML = manualInstructors.map(name => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-bottom:1px solid var(--border);">
+      <span style="font-size:13px;">👤 ${name}</span>
+      <button onclick="removeManualInstructor('${name.replace(/'/g, "\\'")}')" 
+              style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; padding:4px 8px;">×</button>
+    </div>
+  `).join('');
+}
+
+// ============ التقويم الهجري ============
+const HIJRI_MONTHS_AR = ['المحرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 
+                         'جمادى الآخرة', 'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
+const ARABIC_DAYS_FULL = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+let hijriCalState = {
+  viewYear: 1447,
+  viewMonth: 12,
+  selectedYear: null,
+  selectedMonth: null,
+  selectedDay: null,
+};
+
+// تحويل تاريخ هجري لتاريخ ميلادي (تقريبي)
+// يستخدم Intl.DateTimeFormat للحصول على دقة معقولة
+function hijriToGregorian(hYear, hMonth, hDay) {
+  // طريقة تقريبية: تحويل من عدد الأيام منذ بداية التقويم الهجري
+  // نقطة المرجع: 1 محرم 1 هـ = 16 يوليو 622 م (Julian)
+  // طول السنة الهجرية المتوسط = 354.367 يوم
+  
+  // طريقة أبسط: نستخدم Intl لتحويل ميلادي → هجري ونعكس
+  // البحث الثنائي عن التاريخ الميلادي اللي يطابق
+  let gDate = new Date();
+  // تقدير أولي: بداية السنة الهجرية ≈ 622 + (hYear-1)*0.97
+  const approxYear = 622 + Math.floor((hYear - 1) * 0.970224 + (hMonth - 1) / 12.4);
+  gDate = new Date(approxYear, 0, 1);
+  
+  // بحث ثنائي/خطي حول هذا التقدير
+  // نضيف أو نطرح أيام حتى نطابق
+  for (let attempt = 0; attempt < 365 * 2; attempt++) {
+    const test = formatDateAsHijri(gDate);
+    if (test.year === hYear && test.month === hMonth && test.day === hDay) {
+      return gDate;
+    }
+    // نقرر اتجاه الحركة
+    const testTotal = test.year * 12 * 30 + test.month * 30 + test.day;
+    const wantTotal = hYear * 12 * 30 + hMonth * 30 + hDay;
+    if (testTotal < wantTotal) {
+      gDate.setDate(gDate.getDate() + 1);
+    } else if (testTotal > wantTotal) {
+      gDate.setDate(gDate.getDate() - 1);
+    } else {
+      // نفس الإجمالي لكن مكونات مختلفة - نتحرك تجاه التطابق
+      if (test.year < hYear || (test.year === hYear && test.month < hMonth)) {
+        gDate.setDate(gDate.getDate() + 1);
+      } else {
+        gDate.setDate(gDate.getDate() - 1);
+      }
+    }
+  }
+  return gDate;
+}
+
+// تحويل تاريخ ميلادي لهجري باستخدام Intl
+function formatDateAsHijri(gDate) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+      year: 'numeric', month: 'numeric', day: 'numeric'
+    });
+    const parts = formatter.formatToParts(gDate);
+    const year = parseInt(parts.find(p => p.type === 'year')?.value || '0');
+    const month = parseInt(parts.find(p => p.type === 'month')?.value || '0');
+    const day = parseInt(parts.find(p => p.type === 'day')?.value || '0');
+    return { year, month, day };
+  } catch (e) {
+    return { year: 1447, month: 1, day: 1 };
+  }
+}
+
+function getHijriDayOfWeek(hYear, hMonth, hDay) {
+  const gDate = hijriToGregorian(hYear, hMonth, hDay);
+  return gDate.getDay(); // 0 = الأحد
+}
+
+function getDaysInHijriMonth(hYear, hMonth) {
+  // نحصل على عدد الأيام بفحص هل اليوم 30 موجود أم لا
+  for (let testDay of [30, 29]) {
+    const gDate = hijriToGregorian(hYear, hMonth, testDay);
+    const back = formatDateAsHijri(gDate);
+    if (back.year === hYear && back.month === hMonth && back.day === testDay) {
+      return testDay;
+    }
+  }
+  return 29;
+}
+
+function openHijriCalendar() {
+  // استرداد التاريخ الحالي إذا موجود
+  const current = (document.getElementById('pdfStartDate')?.value || '').trim();
+  const m = current.match(/(\d+)[\/\-](\d+)[\/\-](\d+)/);
+  if (m) {
+    hijriCalState.viewYear = parseInt(m[1]);
+    hijriCalState.viewMonth = parseInt(m[2]);
+    hijriCalState.selectedYear = parseInt(m[1]);
+    hijriCalState.selectedMonth = parseInt(m[2]);
+    hijriCalState.selectedDay = parseInt(m[3]);
+  } else {
+    // التاريخ الحالي
+    const today = formatDateAsHijri(new Date());
+    hijriCalState.viewYear = today.year;
+    hijriCalState.viewMonth = today.month;
+  }
+  renderHijriCalendar();
+  document.getElementById('hijriCalendarModal').showModal();
+}
+
+function renderHijriCalendar() {
+  const { viewYear, viewMonth } = hijriCalState;
+  document.getElementById('hijriCalMonth').textContent = HIJRI_MONTHS_AR[viewMonth - 1];
+  document.getElementById('hijriCalYear').textContent = viewYear + ' هـ';
+  document.getElementById('hijriCalYearInput').value = viewYear;
+  document.getElementById('hijriCalMonthInput').value = viewMonth;
+  
+  const grid = document.getElementById('hijriCalGrid');
+  let html = '';
+  
+  // ترويسة أيام الأسبوع
+  const dayHeaders = ['السبت', 'الجمعة', 'الخميس', 'الأربعاء', 'الثلاثاء', 'الاثنين', 'الأحد'];
+  // لكن HTML grid يبدأ من اليسار، RTL سيقلبه طبيعياً
+  for (const dh of ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']) {
+    html += `<div style="text-align:center; font-size:10px; font-weight:700; color:#1A5A38; padding:6px 2px; background:#DDF0E5; border-radius:4px;">${dh.substring(0,3)}</div>`;
+  }
+  
+  // أول يوم في الشهر
+  const firstDayOfWeek = getHijriDayOfWeek(viewYear, viewMonth, 1);
+  const daysInMonth = getDaysInHijriMonth(viewYear, viewMonth);
+  
+  // خلايا فارغة قبل اليوم الأول
+  for (let i = 0; i < firstDayOfWeek; i++) {
+    html += `<div></div>`;
+  }
+  
+  // أيام الشهر
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dow = (firstDayOfWeek + day - 1) % 7;
+    const isWeekend = dow === 5 || dow === 6; // الجمعة والسبت
+    const isSelected = hijriCalState.selectedYear === viewYear && 
+                       hijriCalState.selectedMonth === viewMonth && 
+                       hijriCalState.selectedDay === day;
+    
+    const bg = isSelected ? '#2D8659' : (isWeekend ? '#F5F5F5' : 'white');
+    const color = isSelected ? 'white' : (isWeekend ? '#999' : '#1F2A37');
+    const border = isSelected ? '#1A5A38' : '#DEEBE3';
+    const cursor = isWeekend ? 'not-allowed' : 'pointer';
+    const fontWeight = isSelected ? '900' : '500';
+    
+    html += `<div onclick="${isWeekend ? '' : `selectHijriDay(${day})`}" 
+                  style="text-align:center; padding:8px 2px; background:${bg}; color:${color}; 
+                         border:1px solid ${border}; border-radius:6px; cursor:${cursor}; 
+                         font-size:12px; font-weight:${fontWeight}; transition:all 0.15s;"
+                  ${isWeekend ? '' : `onmouseover="if(${!isSelected}) this.style.background='#F0F8F3'" 
+                  onmouseout="if(${!isSelected}) this.style.background='white'"`}>
+      ${day}
+    </div>`;
+  }
+  
+  grid.innerHTML = html;
+  
+  // تحديث المختار
+  if (hijriCalState.selectedDay) {
+    const dow = getHijriDayOfWeek(hijriCalState.selectedYear, hijriCalState.selectedMonth, hijriCalState.selectedDay);
+    document.getElementById('hijriCalSelected').textContent = 
+      `${hijriCalState.selectedYear}/${hijriCalState.selectedMonth}/${hijriCalState.selectedDay} (${ARABIC_DAYS_FULL[dow]})`;
+  }
+}
+
+function selectHijriDay(day) {
+  hijriCalState.selectedYear = hijriCalState.viewYear;
+  hijriCalState.selectedMonth = hijriCalState.viewMonth;
+  hijriCalState.selectedDay = day;
+  renderHijriCalendar();
+}
+
+function hijriCalNav(delta) {
+  let m = hijriCalState.viewMonth + delta;
+  let y = hijriCalState.viewYear;
+  if (m > 12) { m = 1; y++; }
+  if (m < 1) { m = 12; y--; }
+  hijriCalState.viewMonth = m;
+  hijriCalState.viewYear = y;
+  renderHijriCalendar();
+}
+
+function hijriCalGoToYear() {
+  const y = parseInt(document.getElementById('hijriCalYearInput').value);
+  if (!isNaN(y) && y >= 1440 && y <= 1500) {
+    hijriCalState.viewYear = y;
+    renderHijriCalendar();
+  }
+}
+
+function hijriCalGoToMonth() {
+  const m = parseInt(document.getElementById('hijriCalMonthInput').value);
+  if (m >= 1 && m <= 12) {
+    hijriCalState.viewMonth = m;
+    renderHijriCalendar();
+  }
+}
+
+function confirmHijriDate() {
+  if (!hijriCalState.selectedDay) {
+    showNotification('warning', 'لم تختاري تاريخ', 'اختاري يوم من التقويم');
+    return;
+  }
+  const dateStr = `${hijriCalState.selectedYear}/${hijriCalState.selectedMonth}/${hijriCalState.selectedDay}`;
+  document.getElementById('pdfStartDate').value = dateStr;
+  
+  // تحديد يوم الأسبوع تلقائياً
+  const dow = getHijriDayOfWeek(hijriCalState.selectedYear, hijriCalState.selectedMonth, hijriCalState.selectedDay);
+  // الأحد=0، الاثنين=1، ..، الخميس=4، الجمعة=5، السبت=6
+  if (dow >= 0 && dow <= 4) {
+    document.getElementById('pdfStartDay').value = dow;
+  }
+  
+  updateStartDayPreview();
+  document.getElementById('hijriCalendarModal').close();
+  showNotification('success', '✓ تم اختيار التاريخ', `${dateStr} (${ARABIC_DAYS_FULL[dow]})`);
+}
+
+function updateStartDayPreview() {
+  const val = document.getElementById('pdfStartDate').value.trim();
+  const m = val.match(/(\d+)[\/\-](\d+)[\/\-](\d+)/);
+  const preview = document.getElementById('startDayPreview');
+  if (!preview) return;
+  
+  if (m) {
+    try {
+      const dow = getHijriDayOfWeek(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
+      preview.textContent = `📅 يوم ${ARABIC_DAYS_FULL[dow]}`;
+      // تحديث الـ select تلقائياً إذا الإدخال يدوي
+      if (dow >= 0 && dow <= 4) {
+        document.getElementById('pdfStartDay').value = dow;
+      }
+    } catch (e) {
+      preview.textContent = '';
+    }
+  } else {
+    preview.textContent = '';
+  }
+}
+
+// ============ Init ============
+function initializeApp() {
+  CONFIG.numDays = parseInt(document.getElementById('numDays').value);
+  CONFIG.numPeriods = parseInt(document.getElementById('numPeriods').value);
+  CONFIG.numLabs = parseInt(document.getElementById('numLabs').value);
+  CONFIG.labCapacity = parseInt(document.getElementById('labCapacity').value);
+
+  // إعادة حساب labsNeeded
+  courses.forEach(c => c.labsNeeded = Math.ceil(c.totalStudents / CONFIG.labCapacity));
+
+  // إذا ما عندنا labs، نبني افتراضية
+  if (labs.length === 0) {
+    labs = Array.from({length: CONFIG.numLabs}, (_, i) => ({
+      code: `LAB-${i+1}`,
+      desc: `معمل ${i+1}`,
+      capacity: CONFIG.labCapacity,
+    }));
+  }
+
+  // فك قفل التابات
+  ['schedule', 'supervisors', 'export'].forEach(t => {
+    const btn = document.getElementById(`tabBtn-${t}`);
+    if (btn) {
+      btn.classList.remove('locked');
+      btn.disabled = false;
+    }
+  });
+
+  switchTab('schedule');
+  renderScheduleGrid();
+  renderCoursePool();
+  updateStats();
+}
+
+// ============ Tabs ============
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  
+  const map = {
+    'setup': 0, 'schedule': 1, 'supervisors': 2, 'export': 3
+  };
+  document.querySelectorAll('.tab-btn')[map[name]].classList.add('active');
+  document.getElementById(`tab-${name}`).classList.add('active');
+
+  if (name === 'supervisors') {
+    renderSupervisorTables();
+    renderInstructorPool();
+  }
+  if (name === 'export') updateExportStats();
+}
+
+// ============ Course Pool ============
+// نظام ألوان عام: نولّد لون من اسم التخصص
+const SPEC_COLOR_PALETTE = [
+  { border: '#E67E22', bg: '#FFE4B5' },  // برتقالي
+  { border: '#3498DB', bg: '#B0E0E6' },  // أزرق
+  { border: '#27AE60', bg: '#D4EFDF' },  // أخضر
+  { border: '#E74C3C', bg: '#FADBD8' },  // أحمر
+  { border: '#16A085', bg: '#D1F2EB' },  // تركواز
+  { border: '#F39C12', bg: '#FCF3CF' },  // أصفر
+  { border: '#8E44AD', bg: '#E8DAEF' },  // بنفسجي
+  { border: '#34495E', bg: '#D5DBDB' },  // رمادي داكن
+];
+
+const _specColorCache = {};
+function getSpecColor(specName) {
+  if (!specName) return { border: '#95A5A6', bg: '#FAFAFA' };
+  if (_specColorCache[specName]) return _specColorCache[specName];
+  // hash بسيط من اسم التخصص لاختيار لون ثابت
+  let hash = 0;
+  for (let i = 0; i < specName.length; i++) hash = (hash * 31 + specName.charCodeAt(i)) >>> 0;
+  const color = SPEC_COLOR_PALETTE[hash % SPEC_COLOR_PALETTE.length];
+  _specColorCache[specName] = color;
+  return color;
+}
+
+function getSpecStyle(c) {
+  if (c.specType === 'shared') {
+    return `border-right: 4px solid #9B59B6; background: #D8BFD8;`;
+  }
+  // التخصص الفعلي
+  const sp = (c.specialtiesList && c.specialtiesList[0]) || c.specType || '';
+  const col = getSpecColor(sp);
+  return `border-right: 4px solid ${col.border}; background: ${col.bg};`;
+}
+
+function getSpecBorderStyle(c) {
+  if (c.specType === 'shared') return 'border-right: 4px solid #9B59B6;';
+  const sp = (c.specialtiesList && c.specialtiesList[0]) || c.specType || '';
+  const col = getSpecColor(sp);
+  return `border-right: 4px solid ${col.border};`;
+}
+
+function getSpecClass(c) {
+  // نُبقيها للتوافق - تستخدم في CSS
+  if (c.specType === 'shared') return 'spec-shared';
+  return 'spec-dynamic';
+}
+
+function renderCoursePool() {
+  const search = document.getElementById('courseSearch')?.value.toLowerCase() || '';
+  const pool = document.getElementById('coursePool');
+  
+  const filtered = courses.filter(c => {
+    // فلتر المستبعدة: تظهر فقط في فلتر "excluded"
+    const isExcl = excludedCourses.has(c.code);
+    if (currentFilter === 'excluded') {
+      if (!isExcl) return false;
+    } else {
+      if (isExcl) return false;
+    }
+    if (search && !c.code.toLowerCase().includes(search) && !c.name.toLowerCase().includes(search)) return false;
+    if (currentFilter === 'shared' && c.specType !== 'shared') return false;
+    if (currentFilter === 'unplaced' && placements[c.code] !== undefined) return false;
+    // فلتر تخصص ديناميكي
+    if (currentFilter.startsWith('spec:')) {
+      const wantedSpec = currentFilter.substring(5);
+      // المقرر يطابق إذا كان أحد تخصصاته يحتوي اسم التخصص
+      const matches = c.specialtiesList.some(s => s === wantedSpec);
+      if (!matches) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    pool.innerHTML = '<div class="empty-state"><div style="font-size:32px;">🔍</div><p>لا توجد مقررات</p></div>';
+    return;
+  }
+
+  pool.innerHTML = filtered.map(c => {
+    const placed = placements[c.code] !== undefined;
+    const isExcl = excludedCourses.has(c.code);
+    let splitTagText = '';
+    if (c.isSplit) {
+      const sp = c.specialtiesList[0] || '';
+      splitTagText = sp.length > 14 ? sp.substring(0, 12) + '..' : sp;
+    }
+    const splitTag = c.isSplit ? `<span class="meta-pill" style="background:#FFF3E0; color:#E67E22; font-weight:700;">✂️ ${splitTagText}</span>` : '';
+    const excludedTag = isExcl ? `<span class="meta-pill" style="background:#FFE4E1; color:var(--danger); font-weight:700;">🚫 مستبعد${c.autoExcluded ? ' تلقائياً' : ''}</span>` : '';
+    const displayCode = c.isSplit ? c.baseCode : c.code;
+    const draggable = !placed && !isExcl;
+    return `
+      <div class="item-card course-card ${placed ? 'placed' : ''} ${isExcl ? 'excluded' : ''}" 
+           style="${getSpecBorderStyle(c)}"
+           draggable="${draggable}" data-course="${c.code}">
+        <div class="head">
+          <div class="code">${displayCode}</div>
+        </div>
+        <div class="name">${c.name}</div>
+        <div class="meta">
+          <span class="meta-pill">${c.totalStudents} طالبة</span>
+          <span class="meta-pill">${c.labsNeeded} معمل</span>
+          <span class="meta-pill">${c.sections.length} شعبة</span>
+          ${splitTag}
+          ${excludedTag}
+        </div>
+        ${placed ? `<div style="position:absolute; top:6px; left:6px; font-size:9px; color:var(--success); font-weight:700;">✓</div>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  pool.querySelectorAll('.item-card[draggable="true"]').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('course', card.dataset.course);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+}
+
+function buildDynamicFilters() {
+  const tabs = document.getElementById('filterTabs');
+  if (!tabs) return;
+  
+  const specs = window._discoveredSpecialties || [];
+  
+  // حذف الأزرار الديناميكية القديمة
+  tabs.querySelectorAll('.filter-tab.dynamic').forEach(b => b.remove());
+  
+  // بناء أزرار جديدة لكل تخصص (قبل زر "مشترك")
+  const sharedBtn = tabs.querySelector('[data-filter="shared"]');
+  specs.forEach(sp => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-tab dynamic';
+    btn.dataset.filter = `spec:${sp}`;
+    // اختصار الاسم لو طويل
+    const label = sp.length > 18 ? sp.substring(0, 16) + '..' : sp;
+    btn.textContent = label;
+    btn.title = sp;
+    btn.onclick = () => setFilter(`spec:${sp}`);
+    
+    // لون مخصص للزر
+    const col = getSpecColor(sp);
+    btn.style.borderColor = col.border;
+    btn.style.color = col.border;
+    
+    tabs.insertBefore(btn, sharedBtn);
+  });
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === f));
+  renderCoursePool();
+}
+
+// ============ Schedule Grid ============
+function renderScheduleGrid() {
+  const grid = document.getElementById('scheduleGrid');
+  const periods = PERIOD_TIMES[CONFIG.numPeriods];
+  grid.style.gridTemplateColumns = `70px repeat(${CONFIG.numPeriods}, 1fr)`;
+  
+  let html = '<div class="grid-h">اليوم</div>';
+  for (let p = 0; p < CONFIG.numPeriods; p++) {
+    html += `<div class="grid-h">الفترة ${p+1}<span class="time">${periods[p]}</span></div>`;
+  }
+  for (let d = 0; d < CONFIG.numDays; d++) {
+    html += `<div class="day-label">يوم ${d+1}</div>`;
+    for (let p = 0; p < CONFIG.numPeriods; p++) {
+      const slotIdx = d * CONFIG.numPeriods + p;
+      html += `<div class="slot-cell" data-slot="${slotIdx}" id="slot-${slotIdx}"></div>`;
+    }
+  }
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.slot-cell').forEach(cell => {
+    cell.addEventListener('dragover', e => { e.preventDefault(); cell.classList.add('drag-over'); });
+    cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+    cell.addEventListener('drop', e => {
+      e.preventDefault();
+      cell.classList.remove('drag-over');
+      const courseCode = e.dataTransfer.getData('course');
+      placeCourse(courseCode, parseInt(cell.dataset.slot));
+    });
+  });
+
+  refreshAllSlots();
+}
+
+function refreshAllSlots() {
+  for (let s = 0; s < CONFIG.numDays * CONFIG.numPeriods; s++) refreshSlot(s);
+  detectConflicts();
+  updateStats();
+}
+
+function refreshSlot(slotIdx) {
+  const cell = document.getElementById(`slot-${slotIdx}`);
+  if (!cell) return;
+  const placedHere = Object.entries(placements).filter(([, s]) => s === slotIdx)
+    .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
+  const totalLabs = placedHere.reduce((sum, c) => sum + c.labsNeeded, 0);
+
+  let html = `<div class="slot-info"><span>${placedHere.length} م</span><span>${totalLabs}/${CONFIG.numLabs}</span></div>`;
+  for (const c of placedHere) {
+    const displayCode = c.isSplit ? c.baseCode : c.code;
+    let splitMark = '';
+    if (c.isSplit) {
+      const sp = c.specialtiesList[0] || '';
+      const shortSp = sp.length > 8 ? sp.substring(0, 6) : sp;
+      splitMark = `<span style="font-size:9px; color:#E67E22; font-weight:700;">[${shortSp}]</span>`;
+    }
+    html += `<div class="placed-item" style="${getSpecStyle(c)}" draggable="true" data-course="${c.code}">
+      <button class="remove-btn" onclick="removeCourse('${c.code}')">×</button>
+      <div class="pc-code">${displayCode} ${splitMark}</div>
+      <div class="pc-name">${c.name}</div>
+      <div class="pc-stats">${c.totalStudents}ط · ${c.labsNeeded}م</div>
+    </div>`;
+  }
+  cell.innerHTML = html;
+  cell.classList.remove('over-capacity');
+  if (totalLabs > CONFIG.numLabs) cell.classList.add('over-capacity');
+
+  cell.querySelectorAll('.placed-item').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      e.stopPropagation();
+      e.dataTransfer.setData('course', card.dataset.course);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+}
+
+function placeCourse(courseCode, slotIdx) {
+  const course = courses.find(c => c.code === courseCode);
+  if (!course) return;
+  const issues = checkIssues(courseCode, slotIdx);
+  placements[courseCode] = slotIdx;
+  refreshAllSlots();
+  renderCoursePool();
+  // امسح المراقبين لأن الاختبارات تغيرت
+  if (Object.keys(supervisors).length > 0) {
+    // فقط امسح المراقبين للفترة المتأثرة
+    Object.keys(supervisors).forEach(k => {
+      const [s] = k.split('|');
+      if (parseInt(s) === slotIdx) delete supervisors[k];
+    });
+  }
+
+  if (issues.studentConflicts.length > 0) {
+    showNotification('error',
+      `⚠ تعارض ${issues.studentConflicts.length} مقرر!`,
+      `${courseCode} يتعارض مع: ${issues.studentConflicts.slice(0,3).map(c => `${c.code} (${c.sharedCount}ط)`).join('، ')}`);
+  }
+  if (issues.capacityIssue) {
+    showNotification('warning', 'تجاوز سعة المعامل', `${issues.totalLabs}/${CONFIG.numLabs} معمل`);
+  }
+  if (issues.studentConflicts.length === 0 && !issues.capacityIssue) {
+    showNotification('success', '✓ تم الوضع', `${course.code} - ${course.name}`);
+  }
+}
+
+function removeCourse(courseCode) {
+  const slot = placements[courseCode];
+  delete placements[courseCode];
+  // امسح المراقبين لهذي الفترة
+  Object.keys(supervisors).forEach(k => {
+    const [s] = k.split('|');
+    if (parseInt(s) === slot) delete supervisors[k];
+  });
+  refreshAllSlots();
+  renderCoursePool();
+}
+
+function checkIssues(courseCode, slotIdx) {
+  const course = courses.find(c => c.code === courseCode);
+  if (!course) return { studentConflicts: [], capacityIssue: false };
+
+  const others = Object.entries(placements).filter(([code, s]) => s === slotIdx && code !== courseCode)
+    .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
+
+  const courseStudents = new Set();
+  course.sections.forEach(s => s.students.forEach(st => courseStudents.add(st)));
+
+  const studentConflicts = [];
+  for (const other of others) {
+    const otherStudents = new Set();
+    other.sections.forEach(s => s.students.forEach(st => otherStudents.add(st)));
+    const inter = [...courseStudents].filter(x => otherStudents.has(x));
+    if (inter.length > 0) studentConflicts.push({...other, sharedCount: inter.length});
+  }
+
+  const totalLabs = [...others, course].reduce((sum, c) => sum + c.labsNeeded, 0);
+  return { studentConflicts, capacityIssue: totalLabs > CONFIG.numLabs, totalLabs };
+}
+
+function detectConflicts() {
+  conflicts = [];
+  const slotCourses = {};
+  for (const [code, slot] of Object.entries(placements)) {
+    if (!slotCourses[slot]) slotCourses[slot] = [];
+    slotCourses[slot].push(code);
+  }
+
+  for (const [slot, codes] of Object.entries(slotCourses)) {
+    const slotIdx = parseInt(slot);
+    const day = Math.floor(slotIdx / CONFIG.numPeriods) + 1;
+    const period = (slotIdx % CONFIG.numPeriods) + 1;
+    const courseStudents = {};
+    let totalLabs = 0;
+    for (const code of codes) {
+      const c = courses.find(x => x.code === code);
+      if (!c) continue;
+      const s = new Set();
+      c.sections.forEach(sec => sec.students.forEach(st => s.add(st)));
+      courseStudents[code] = s;
+      totalLabs += c.labsNeeded;
+    }
+    for (let i = 0; i < codes.length; i++) {
+      for (let j = i+1; j < codes.length; j++) {
+        const inter = [...courseStudents[codes[i]]].filter(x => courseStudents[codes[j]].has(x));
+        if (inter.length > 0) {
+          conflicts.push({type:'student', severity:'error', message: `يوم ${day} الفترة ${period}: ${inter.length} متدربة في ${codes[i]} و ${codes[j]}`});
+        }
+      }
+    }
+    if (totalLabs > CONFIG.numLabs) {
+      conflicts.push({type:'capacity', severity:'warn', message: `يوم ${day} الفترة ${period}: ${totalLabs} معمل مطلوب، المتاح ${CONFIG.numLabs}`});
+    }
+  }
+
+  // متدربات بأكثر من اختبار في يوم - مع التفاصيل
+  // لكل متدربة، نعرف في أي يوم وأي مقررات وأي فترات
+  const studentDayDetails = {}; // key=`${student}|${day}` -> [{period, course, courseName}]
+  for (const [code, slotVal] of Object.entries(placements)) {
+    const slot = parseInt(slotVal);
+    const day = Math.floor(slot / CONFIG.numPeriods);
+    const period = (slot % CONFIG.numPeriods) + 1;
+    const c = courses.find(x => x.code === code);
+    if (!c) continue;
+    const courseStudents = new Set();
+    c.sections.forEach(sec => sec.students.forEach(st => courseStudents.add(st)));
+    courseStudents.forEach(st => {
+      const k = `${st}|${day}`;
+      if (!studentDayDetails[k]) studentDayDetails[k] = [];
+      studentDayDetails[k].push({
+        period,
+        course: c.isSplit ? c.baseCode : c.code,
+        courseName: c.name,
+      });
+    });
+  }
+  
+  // تجميع المتدربات حسب الحالة
+  const students3Plus = []; // {studentId, studentName, day, exams: [...]}
+  const students2 = [];
+  for (const [key, exams] of Object.entries(studentDayDetails)) {
+    if (exams.length < 2) continue;
+    const [studentId, dayStr] = key.split('|');
+    const day = parseInt(dayStr) + 1; // عرض اليوم بدءاً من 1
+    const studentName = students[studentId]?.name || studentId;
+    const sortedExams = [...exams].sort((a, b) => a.period - b.period);
+    const detail = { studentId, studentName, day, exams: sortedExams };
+    if (exams.length >= 3) students3Plus.push(detail);
+    else students2.push(detail);
+  }
+  
+  // ترتيب حسب اليوم ثم اسم المتدربة
+  students3Plus.sort((a, b) => a.day - b.day || a.studentName.localeCompare(b.studentName));
+  students2.sort((a, b) => a.day - b.day || a.studentName.localeCompare(b.studentName));
+  
+  // إضافة تنبيهات تفصيلية
+  if (students3Plus.length > 0) {
+    students3Plus.forEach(d => {
+      const examsText = d.exams.map(e => `ف${e.period}: ${e.course}`).join(' + ');
+      conflicts.push({
+        type: 'load',
+        severity: 'warn',
+        message: `يوم ${d.day} - ${d.studentName}: ${d.exams.length} اختبارات (${examsText})`,
+        groupKey: '3plus',
+      });
+    });
+  }
+  if (students2.length > 0) {
+    students2.forEach(d => {
+      const examsText = d.exams.map(e => `ف${e.period}: ${e.course}`).join(' + ');
+      conflicts.push({
+        type: 'info',
+        severity: 'info',
+        message: `يوم ${d.day} - ${d.studentName}: ${examsText}`,
+        groupKey: '2exams',
+      });
+    });
+  }
+
+  // تعارضات المراقبين
+  detectSupervisorConflicts();
+
+  renderConflicts();
+}
+
+function detectSupervisorConflicts() {
+  // كل فترة، نشوف هل المدربة تراقب فترة فيها مقررها
+  const sectionInst = {};
+  courses.forEach(c => c.sections.forEach(s => sectionInst[s.id] = s.instructor));
+
+  // المدربات المرتبطات بكل فترة (لها اختبار)
+  const slotBusy = {};
+  for (const [code, slot] of Object.entries(placements)) {
+    if (!slotBusy[slot]) slotBusy[slot] = new Set();
+    const c = courses.find(x => x.code === code);
+    if (!c) continue;
+    c.sections.forEach(s => { if (s.instructor) slotBusy[slot].add(s.instructor); });
+  }
+
+  // فحص المراقبين
+  for (const [key, inst] of Object.entries(supervisors)) {
+    const [slotStr] = key.split('|');
+    const slot = parseInt(slotStr);
+    if (slotBusy[slot] && slotBusy[slot].has(inst)) {
+      const day = Math.floor(slot / CONFIG.numPeriods) + 1;
+      const period = (slot % CONFIG.numPeriods) + 1;
+      conflicts.push({type:'sup', severity:'error', message: `يوم ${day} ف${period}: ${inst} تراقب رغم أن لها اختبار في نفس الفترة`});
+    }
+  }
+}
+
+function renderConflicts() {
+  const list = document.getElementById('conflictsList');
+  const errors = conflicts.filter(c => c.severity === 'error');
+  const warnings = conflicts.filter(c => c.severity === 'warn');
+  const infos = conflicts.filter(c => c.severity === 'info');
+  const realIssues = errors.length + warnings.length;
+  document.getElementById('conflictCount').textContent = realIssues > 0 ? `${realIssues} تنبيه` : '';
+  
+  if (conflicts.length === 0) {
+    list.innerHTML = '<div class="no-conflicts">✓ لا توجد تعارضات أو تنبيهات</div>';
+    return;
+  }
+  
+  let html = '';
+  
+  // 1) أخطاء حرجة
+  if (errors.length > 0) {
+    html += `<div class="alert-section alert-error">
+      <div class="alert-section-header">
+        <span class="alert-icon">⛔</span>
+        <span class="alert-title">أخطاء حرجة - يجب حلها</span>
+        <span class="alert-count">${errors.length}</span>
+      </div>
+      <div class="alert-items">
+        ${errors.map(c => `<div class="alert-item alert-item-error">${c.message}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+  
+  // 2) تحذيرات - نفصل تحذيرات الـ 3+ اختبارات لأنها قد تكون كثيرة
+  const warns3plus = warnings.filter(c => c.groupKey === '3plus');
+  const warnsOther = warnings.filter(c => c.groupKey !== '3plus');
+  
+  if (warnsOther.length > 0) {
+    html += `<div class="alert-section alert-warn">
+      <div class="alert-section-header">
+        <span class="alert-icon">⚠️</span>
+        <span class="alert-title">تحذيرات</span>
+        <span class="alert-count">${warnsOther.length}</span>
+      </div>
+      <div class="alert-items">
+        ${warnsOther.map(c => `<div class="alert-item alert-item-warn">${c.message}</div>`).join('')}
+      </div>
+    </div>`;
+  }
+  
+  if (warns3plus.length > 0) {
+    html += `<div class="alert-section alert-warn">
+      <details>
+        <summary class="alert-section-header" style="cursor:pointer; list-style:none;">
+          <span class="alert-icon">⚠️</span>
+          <span class="alert-title">متدربات بـ 3+ اختبارات في يوم واحد (ضغط عالي)</span>
+          <span class="alert-count">${warns3plus.length}</span>
+          <span style="margin-right:8px; font-size:11px; color:var(--text-muted);">▼ اضغطي للعرض</span>
+        </summary>
+        <div class="alert-items">
+          ${warns3plus.map(c => `<div class="alert-item alert-item-warn">${c.message}</div>`).join('')}
+        </div>
+      </details>
+    </div>`;
+  }
+  
+  // 3) المعلومات - مجمّعة في قسم قابل للطي
+  if (infos.length > 0) {
+    html += `<div class="alert-section alert-info-section">
+      <details>
+        <summary class="alert-section-header" style="cursor:pointer; list-style:none;">
+          <span class="alert-icon">ℹ️</span>
+          <span class="alert-title">متدربات بـ اختبارين في يوم بفترتين مختلفتين (وضع طبيعي)</span>
+          <span class="alert-count">${infos.length}</span>
+          <span style="margin-right:8px; font-size:11px; color:var(--text-muted);">▼ اضغطي للعرض</span>
+        </summary>
+        <div class="alert-items">
+          ${infos.map(c => `<div class="alert-item alert-item-info">${c.message}</div>`).join('')}
+        </div>
+      </details>
+    </div>`;
+  }
+  
+  list.innerHTML = html;
+}
+
+function updateStats() {
+  document.getElementById('statCourses').textContent = courses.filter(c => !excludedCourses.has(c.code)).length;
+  document.getElementById('statPlaced').textContent = Object.keys(placements).length;
+  document.getElementById('statSupervisors').textContent = Object.keys(supervisors).length;
+  document.getElementById('statConflicts').textContent = conflicts.filter(c => c.severity === 'error').length;
+}
+
+// ============ Auto distribute ============
+function autoSplitAllShared() {
+  // (لم تعد مستخدمة - التقسيم الآن يدوي)
+}
+
+function autoDistribute() {
+  if (Object.keys(placements).length > 0 && !confirm('استبدال التوزيع الحالي؟')) return;
+  
+  showNotification('success', '⏳ جاري التوزيع...', 'الخوارزمية الذكية تعمل');
+  
+  // نشغّل بشكل غير متزامن عشان الـ UI يستجيب
+  setTimeout(() => {
+    runSmartDistribution();
+  }, 50);
+}
+
+function runSmartDistribution() {
+  placements = {};
+  supervisors = {};
+  
+  const eligible = courses.filter(c => !excludedCourses.has(c.code));
+  const total = CONFIG.numDays * CONFIG.numPeriods;
+  
+  // ============ المرحلة 1: تحضير البيانات ============
+  // لكل مقرر، نخزن متدربيه في Set
+  const courseStudents = {};
+  for (const c of eligible) {
+    const s = new Set();
+    c.sections.forEach(sec => sec.students.forEach(st => s.add(st)));
+    courseStudents[c.code] = s;
+  }
+  
+  // المقررات المنقسمة (نفس baseCode) لازم تكون في أيام مختلفة (يفضل) أو على الأقل فترات مختلفة
+  const splitGroups = {};
+  for (const c of eligible) {
+    if (c.isSplit) {
+      if (!splitGroups[c.baseCode]) splitGroups[c.baseCode] = [];
+      splitGroups[c.baseCode].push(c.code);
+    }
+  }
+  
+  // ============ المرحلة 2: الترتيب الذكي ============
+  // أولوية أولى: المقررات الكبيرة (تحتاج معامل كثيرة) - صعب وضعها لاحقاً
+  // أولوية ثانية: المقررات اللي تتعارض مع كثير من المقررات الأخرى
+  
+  // نحسب درجة "صعوبة" كل مقرر (كم مقرر آخر يتعارض معه)
+  const conflictScore = {};
+  for (const c of eligible) {
+    let score = 0;
+    for (const other of eligible) {
+      if (c.code === other.code) continue;
+      // عدد المتدربات المشتركات
+      const inter = [...courseStudents[c.code]].filter(s => courseStudents[other.code].has(s)).length;
+      if (inter > 0) score++;
+    }
+    conflictScore[c.code] = score;
+  }
+  
+  // الترتيب: الأعلى صعوبة أولاً (Most Constrained First)
+  const sorted = [...eligible].sort((a, b) => {
+    // أولاً: المقررات اللي تحتاج أكثر معامل
+    if (b.labsNeeded !== a.labsNeeded) return b.labsNeeded - a.labsNeeded;
+    // ثانياً: الأكثر تعارضاً
+    if (conflictScore[b.code] !== conflictScore[a.code]) return conflictScore[b.code] - conflictScore[a.code];
+    // ثالثاً: عدد الطلاب
+    return b.totalStudents - a.totalStudents;
+  });
+  
+  // ============ المرحلة 3: التوزيع الأولي ============
+  function tryPlace(courseCode, slot) {
+    const course = eligible.find(c => c.code === courseCode);
+    if (!course) return false;
+    
+    // فحص تعارض المتدربات
+    const myStudents = courseStudents[courseCode];
+    const otherInSlot = Object.entries(placements).filter(([, s]) => s === slot);
+    for (const [otherCode] of otherInSlot) {
+      const otherStudents = courseStudents[otherCode];
+      for (const st of myStudents) {
+        if (otherStudents.has(st)) return false;
+      }
+    }
+    
+    // فحص سعة المعامل
+    const totalLabs = otherInSlot.reduce((sum, [c]) => {
+      return sum + (eligible.find(x => x.code === c)?.labsNeeded || 0);
+    }, 0) + course.labsNeeded;
+    if (totalLabs > CONFIG.numLabs) return false;
+    
+    return true;
+  }
+  
+  function scoreSlot(courseCode, slot) {
+    const course = eligible.find(c => c.code === courseCode);
+    if (!course) return Infinity;
+    
+    const day = Math.floor(slot / CONFIG.numPeriods);
+    const period = slot % CONFIG.numPeriods;
+    let score = 0;
+    
+    // 1) معاقبة الفترات المزدحمة (نفضل التوازن)
+    const slotLoad = Object.entries(placements)
+      .filter(([, s]) => s === slot)
+      .reduce((sum, [c]) => sum + (eligible.find(x => x.code === c)?.labsNeeded || 0), 0);
+    score += slotLoad * 2;
+    
+    // 2) معاقبة وضع متدربيه في يوم فيه اختباراتهن سابقاً
+    const myStudents = courseStudents[courseCode];
+    let studentsAlreadyInDay = 0;
+    let studentsInSameDay3plus = 0;
+    
+    const studentDayCount = {};
+    for (const [otherCode, otherSlot] of Object.entries(placements)) {
+      const otherDay = Math.floor(otherSlot / CONFIG.numPeriods);
+      if (otherDay !== day) continue;
+      const otherStudents = courseStudents[otherCode];
+      for (const st of myStudents) {
+        if (otherStudents.has(st)) {
+          studentDayCount[st] = (studentDayCount[st] || 0) + 1;
+        }
+      }
+    }
+    
+    for (const [st, count] of Object.entries(studentDayCount)) {
+      if (count >= 2) studentsInSameDay3plus++;  // ستصبح 3+ بعد إضافة هذا
+      else if (count === 1) studentsAlreadyInDay++;  // ستصبح 2
+    }
+    
+    // عقوبة كبيرة جداً للحالات اللي تخلق 3+ اختبارات
+    score += studentsInSameDay3plus * 100;
+    // عقوبة متوسطة لكل متدربة سيكون لها اختباران
+    score += studentsAlreadyInDay * 2;
+    
+    // 3) للكتل المنقسمة: نفضل أيام مختلفة
+    if (course.isSplit) {
+      const sameGroup = splitGroups[course.baseCode] || [];
+      for (const otherCode of sameGroup) {
+        if (otherCode === courseCode) continue;
+        if (placements[otherCode] !== undefined) {
+          const otherDay = Math.floor(placements[otherCode] / CONFIG.numPeriods);
+          if (otherDay === day) score += 5; // معاقبة خفيفة لو نفس اليوم
+        }
+      }
+    }
+    
+    return score;
+  }
+  
+  // التوزيع الأولي
+  for (const course of sorted) {
+    let bestSlot = -1, bestScore = Infinity;
+    for (let slot = 0; slot < total; slot++) {
+      if (!tryPlace(course.code, slot)) continue;
+      const sc = scoreSlot(course.code, slot);
+      if (sc < bestScore) { bestScore = sc; bestSlot = slot; }
+    }
+    if (bestSlot >= 0) placements[course.code] = bestSlot;
+  }
+  
+  // ============ المرحلة 4: التحسين التكراري (Local Search) ============
+  // نحاول نقل أو تبديل المقررات لتقليل عدد المتدربات بـ 2+ اختبارات في يوم
+  
+  function evaluateGlobal() {
+    let cost = 0;
+    let students2 = 0, students3 = 0;
+    
+    const studentDay = {};
+    for (const [code, slot] of Object.entries(placements)) {
+      const day = Math.floor(slot / CONFIG.numPeriods);
+      const myStudents = courseStudents[code];
+      myStudents.forEach(st => {
+        const k = `${st}|${day}`;
+        studentDay[k] = (studentDay[k] || 0) + 1;
+      });
+    }
+    for (const v of Object.values(studentDay)) {
+      if (v >= 3) { students3++; cost += (v - 2) * 50; }
+      else if (v === 2) { students2++; cost += 1; }
+    }
+    return { cost, students2, students3 };
+  }
+  
+  let { cost: bestCost } = evaluateGlobal();
+  let improved = true;
+  let iterations = 0;
+  const MAX_ITERATIONS = 200;
+  
+  const placedCodes = Object.keys(placements);
+  
+  while (improved && iterations < MAX_ITERATIONS) {
+    improved = false;
+    iterations++;
+    
+    // نجرب نقل كل مقرر إلى فترة أخرى
+    for (const code of placedCodes) {
+      const currentSlot = placements[code];
+      let bestNewSlot = currentSlot;
+      let bestNewCost = bestCost;
+      
+      for (let newSlot = 0; newSlot < total; newSlot++) {
+        if (newSlot === currentSlot) continue;
+        
+        // نقل مؤقت
+        delete placements[code];
+        if (!tryPlace(code, newSlot)) {
+          placements[code] = currentSlot;
+          continue;
+        }
+        placements[code] = newSlot;
+        
+        const { cost: newCost } = evaluateGlobal();
+        
+        if (newCost < bestNewCost) {
+          bestNewCost = newCost;
+          bestNewSlot = newSlot;
+        }
+        
+        // أرجع
+        placements[code] = currentSlot;
+      }
+      
+      if (bestNewSlot !== currentSlot) {
+        placements[code] = bestNewSlot;
+        bestCost = bestNewCost;
+        improved = true;
+      }
+    }
+  }
+  
+  // ============ المرحلة 5: العرض ============
+  refreshAllSlots();
+  renderCoursePool();
+  
+  const placed = Object.keys(placements).length;
+  const { students2, students3 } = evaluateGlobal();
+  
+  if (placed === eligible.length) {
+    let msg = `${placed} مقرر`;
+    if (students3 > 0) msg += ` | ${students3} متدربة بـ 3+ اختبارات`;
+    if (students2 > 0) msg += ` | ${students2} متدربة بـ 2 اختبار`;
+    showNotification('success', `✓ التوزيع تم (${iterations} تكرار)`, msg);
+  } else {
+    showNotification('warning', 'توزيع جزئي', `${placed} من ${eligible.length}`);
+  }
+}
+
+function clearAll() {
+  if (!confirm('مسح كل التوزيعات؟')) return;
+  placements = {};
+  supervisors = {};
+  refreshAllSlots();
+  renderCoursePool();
+}
+
+// ============ Supervisors ============
+function renderInstructorPool() {
+  const search = document.getElementById('instSearch')?.value.toLowerCase() || '';
+  const pool = document.getElementById('instructorPool');
+  const available = instructors.filter(i => !excludedInstructors.has(i));
+  
+  // عدد المراقبين لكل مدربة
+  const counts = {};
+  Object.values(supervisors).forEach(i => counts[i] = (counts[i] || 0) + 1);
+  
+  const filtered = available.filter(i => !search || i.toLowerCase().includes(search));
+  
+  if (filtered.length === 0) {
+    pool.innerHTML = '<div class="empty-state"><p>لا توجد مدربات</p></div>';
+    return;
+  }
+  
+  pool.innerHTML = filtered.map(i => `
+    <div class="item-card" draggable="true" data-instructor="${i}">
+      <div class="head">
+        <div class="name" style="font-weight:700; font-size:13px;">${i}</div>
+        <span class="meta-pill" style="font-size:11px;">${counts[i] || 0} مراقبة</span>
+      </div>
+    </div>
+  `).join('');
+
+  pool.querySelectorAll('.item-card').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      e.dataTransfer.setData('instructor', card.dataset.instructor);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+}
+
+function renderSupervisorTables() {
+  const container = document.getElementById('supervisorTables');
+  const periods = PERIOD_TIMES[CONFIG.numPeriods];
+  
+  let html = '';
+  for (let day = 0; day < CONFIG.numDays; day++) {
+    let dayHasContent = false;
+    let dayHtml = `<details ${day === 0 ? 'open' : ''} style="margin-bottom:12px; border:1px solid var(--border); border-radius:10px; padding:12px; background:white;">
+      <summary style="cursor:pointer; font-family:'Cairo'; font-weight:700; color:var(--primary);">📅 اليوم ${day+1}</summary>`;
+    
+    for (let period = 0; period < CONFIG.numPeriods; period++) {
+      const slot = day * CONFIG.numPeriods + period;
+      const placedHere = Object.entries(placements).filter(([, s]) => s === slot)
+        .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
+      
+      if (placedHere.length === 0) continue;
+      dayHasContent = true;
+      
+      dayHtml += `<div style="margin:12px 0; padding:8px; background:#FAFAF7; border-radius:6px;">
+        <div style="font-weight:700; color:var(--primary); margin-bottom:6px; font-size:13px;">⏰ الفترة ${period+1} - ${periods[period]}</div>
+        <table class="lab-table">
+          <thead><tr><th>المقرر</th><th>المعمل</th><th>المراقبة</th></tr></thead>
+          <tbody>`;
+      
+      // وزع المعامل على الكتل
+      let labIdx = 0;
+      for (const c of placedHere) {
+        for (let li = 0; li < c.labsNeeded; li++) {
+          if (labIdx >= labs.length) break;
+          const lab = labs[labIdx++];
+          const key = `${slot}|${lab.code}`;
+          const supervisor = supervisors[key] || '';
+          const roomNum = getRoomNumber(lab.code, lab.desc);
+          dayHtml += `<tr>
+            <td style="text-align:right;"><strong>${c.code}</strong> - <span style="font-size:11px; color:var(--text-muted);">${c.name}</span></td>
+            <td>معمل ${roomNum}</td>
+            <td>
+              <div class="supervisor-slot ${supervisor ? 'has-supervisor' : ''}" data-key="${key}" data-slot="${slot}">
+                ${supervisor || '— اسحبي مدربة —'}
+                ${supervisor ? `<button onclick="removeSupervisor('${key}')" style="background:none; border:none; cursor:pointer; color:var(--danger); margin-right:6px;">×</button>` : ''}
+              </div>
+            </td>
+          </tr>`;
+        }
+      }
+      
+      dayHtml += `</tbody></table></div>`;
+    }
+    
+    dayHtml += '</details>';
+    if (dayHasContent) html += dayHtml;
+  }
+  
+  if (!html) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">📅</div><p>لم يتم توزيع أي مقررات بعد. عودي لتاب "جدول الاختبارات" أولاً</p></div>';
+    return;
+  }
+  
+  container.innerHTML = html;
+  
+  // Drag handlers
+  container.querySelectorAll('.supervisor-slot').forEach(slot => {
+    slot.addEventListener('dragover', e => { e.preventDefault(); slot.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => slot.classList.remove('drag-over'));
+    slot.addEventListener('drop', e => {
+      e.preventDefault();
+      slot.classList.remove('drag-over');
+      const inst = e.dataTransfer.getData('instructor');
+      assignSupervisor(slot.dataset.key, parseInt(slot.dataset.slot), inst);
+    });
+  });
+}
+
+function assignSupervisor(key, slotIdx, instructor) {
+  // افحص: هل هذي المدربة تدرّس مقرر في نفس الفترة؟
+  const slotBusy = new Set();
+  for (const [code, s] of Object.entries(placements)) {
+    if (s !== slotIdx) continue;
+    const c = courses.find(x => x.code === code);
+    if (!c) continue;
+    c.sections.forEach(sec => { if (sec.instructor) slotBusy.add(sec.instructor); });
+  }
+  
+  if (slotBusy.has(instructor)) {
+    showNotification('error', '⚠ تعارض!', `${instructor} لها اختبار في هذي الفترة`);
+    return;
+  }
+  
+  // افحص: هل هي تراقب معمل آخر في نفس الفترة؟
+  for (const [k, i] of Object.entries(supervisors)) {
+    const [s] = k.split('|');
+    if (parseInt(s) === slotIdx && i === instructor && k !== key) {
+      showNotification('error', '⚠ تعارض!', `${instructor} مسندة لمعمل آخر في نفس الفترة`);
+      return;
+    }
+  }
+  
+  supervisors[key] = instructor;
+  renderSupervisorTables();
+  renderInstructorPool();
+  detectConflicts();
+  updateStats();
+  showNotification('success', '✓ تم الإسناد', instructor);
+}
+
+function removeSupervisor(key) {
+  delete supervisors[key];
+  renderSupervisorTables();
+  renderInstructorPool();
+  detectConflicts();
+  updateStats();
+}
+
+function autoAssignSupervisors() {
+  if (Object.keys(placements).length === 0) {
+    showNotification('warning', 'لا توجد اختبارات', 'وزعي المقررات أولاً');
+    return;
+  }
+  if (Object.keys(supervisors).length > 0 && !confirm('استبدال المراقبين الحالية؟')) return;
+  
+  supervisors = {};
+  const available = instructors.filter(i => !excludedInstructors.has(i));
+  const counts = {}; available.forEach(i => counts[i] = 0);
+  
+  // لكل فترة
+  for (let slot = 0; slot < CONFIG.numDays * CONFIG.numPeriods; slot++) {
+    const placedHere = Object.entries(placements).filter(([, s]) => s === slot)
+      .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
+    if (placedHere.length === 0) continue;
+    
+    // المدربات المشغولات في هذي الفترة
+    const busy = new Set();
+    placedHere.forEach(c => c.sections.forEach(s => { if (s.instructor) busy.add(s.instructor); }));
+    
+    const free = available.filter(i => !busy.has(i)).sort((a, b) => counts[a] - counts[b]);
+    
+    let labIdx = 0, freeIdx = 0;
+    for (const c of placedHere) {
+      for (let li = 0; li < c.labsNeeded; li++) {
+        if (labIdx >= labs.length) break;
+        const lab = labs[labIdx++];
+        const key = `${slot}|${lab.code}`;
+        if (freeIdx < free.length) {
+          supervisors[key] = free[freeIdx];
+          counts[free[freeIdx]]++;
+          freeIdx++;
+        }
+      }
+    }
+  }
+  
+  renderSupervisorTables();
+  renderInstructorPool();
+  detectConflicts();
+  updateStats();
+  showNotification('success', '✓ التوزيع التلقائي للمراقبين تم', `${Object.keys(supervisors).length} مراقبة`);
+}
+
+function clearSupervisors() {
+  if (!confirm('مسح كل المراقبين؟')) return;
+  supervisors = {};
+  renderSupervisorTables();
+  renderInstructorPool();
+  detectConflicts();
+  updateStats();
+}
+
+// ============ Notifications ============
+function showNotification(type, title, desc) {
+  const container = document.getElementById('notifications');
+  const notif = document.createElement('div');
+  notif.className = `notification ${type}`;
+  const icon = type === 'error' ? '⚠️' : type === 'warning' ? 'ℹ️' : '✓';
+  notif.innerHTML = `<span class="icon">${icon}</span><div class="content"><div class="title">${title}</div><div class="desc">${desc}</div></div><button class="close" onclick="this.parentElement.remove()">×</button>`;
+  container.appendChild(notif);
+  setTimeout(() => notif.remove(), 4500);
+}
+
+// ============ Export ============
+function updateExportStats() {
+  const placed = Object.keys(placements).length;
+  const total = courses.filter(c => !excludedCourses.has(c.code)).length;
+  const sups = Object.keys(supervisors).length;
+  document.getElementById('exportStats').innerHTML = `
+    <div>📚 المقررات المجدولة: <strong>${placed}</strong> من ${total}</div>
+    <div>👀 المراقبين المخصصة: <strong>${sups}</strong></div>
+    <div>⚠️ التعارضات: <strong>${conflicts.filter(c=>c.severity==='error').length}</strong> خطأ + ${conflicts.filter(c=>c.severity==='warn').length} تحذير</div>
+  `;
+}
+
+function buildScheduleSheet() {
+  const periods = PERIOD_TIMES[CONFIG.numPeriods];
+  const rows = [['اليوم', 'الفترة', 'الوقت', 'المقرر', 'اسم المقرر', 'المستوى', 'التخصص', 'عدد المتدربات', 'المعامل', 'الشعب']];
+  for (let d = 0; d < CONFIG.numDays; d++) {
+    for (let p = 0; p < CONFIG.numPeriods; p++) {
+      const slot = d * CONFIG.numPeriods + p;
+      const placed = Object.entries(placements).filter(([, s]) => s === slot)
+        .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
+      for (const c of placed) {
+        rows.push([
+          `يوم ${d+1}`, `الفترة ${p+1}`, periods[p],
+          c.code, c.name, `المستوى ${c.level || '?'}`,
+          c.specialtiesList.join(' / '),
+          c.totalStudents, c.labsNeeded,
+          c.sections.map(s => s.id).join('، ')
+        ]);
+      }
+    }
+  }
+  return XLSX.utils.aoa_to_sheet(rows);
+}
+
+function buildSupervisorsSheet() {
+  const periods = PERIOD_TIMES[CONFIG.numPeriods];
+  const rows = [['اليوم', 'الفترة', 'الوقت', 'المقرر', 'المعمل', 'المراقبة']];
+  for (let d = 0; d < CONFIG.numDays; d++) {
+    for (let p = 0; p < CONFIG.numPeriods; p++) {
+      const slot = d * CONFIG.numPeriods + p;
+      const placedHere = Object.entries(placements).filter(([, s]) => s === slot)
+        .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
+      let labIdx = 0;
+      for (const c of placedHere) {
+        for (let li = 0; li < c.labsNeeded; li++) {
+          if (labIdx >= labs.length) break;
+          const lab = labs[labIdx++];
+          const key = `${slot}|${lab.code}`;
+          const roomNum = getRoomNumber(lab.code, lab.desc);
+          rows.push([
+            `يوم ${d+1}`, `الفترة ${p+1}`, periods[p],
+            `${c.code} - ${c.name}`,
+            `معمل ${roomNum}`,
+            supervisors[key] || ''
+          ]);
+        }
+      }
+    }
+  }
+  return XLSX.utils.aoa_to_sheet(rows);
+}
+
+function buildStudentsSheet() {
+  const rows = [['رقم المتدربة', 'الاسم', 'اليوم', 'الفترة', 'المقرر', 'اسم المقرر']];
+  const studentExams = {};
+  for (const [code, slot] of Object.entries(placements)) {
+    const c = courses.find(x => x.code === code);
+    if (!c) continue;
+    const day = Math.floor(slot / CONFIG.numPeriods) + 1;
+    const period = (slot % CONFIG.numPeriods) + 1;
+    c.sections.forEach(sec => sec.students.forEach(st => {
+      if (!studentExams[st]) studentExams[st] = [];
+      studentExams[st].push({day, period, code, name: c.name});
+    }));
+  }
+  const sortedSids = Object.keys(studentExams).sort((a,b) => (students[a]?.name || '').localeCompare(students[b]?.name || ''));
+  for (const sid of sortedSids) {
+    studentExams[sid].sort((a,b) => a.day - b.day || a.period - b.period);
+    for (const e of studentExams[sid]) {
+      rows.push([sid, students[sid]?.name || '', `يوم ${e.day}`, `الفترة ${e.period}`, e.code, e.name]);
+    }
+  }
+  return XLSX.utils.aoa_to_sheet(rows);
+}
+
+function exportFullExcel() {
+  if (Object.keys(placements).length === 0) {
+    showNotification('warning', 'لا يوجد ما يُصدر', 'وزعي المقررات أولاً');
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, buildScheduleSheet(), 'الجدول');
+  XLSX.utils.book_append_sheet(wb, buildSupervisorsSheet(), 'المراقبين');
+  XLSX.utils.book_append_sheet(wb, buildStudentsSheet(), 'جدول المتدربات');
+  
+  // الإعدادات
+  const cfg = [['البند', 'القيمة'],
+    ['عدد الأيام', CONFIG.numDays],
+    ['الفترات يومياً', CONFIG.numPeriods],
+    ['عدد المعامل', CONFIG.numLabs],
+    ['سعة المعمل', CONFIG.labCapacity],
+    ['المقررات المجدولة', Object.keys(placements).length],
+    ['المراقبين', Object.keys(supervisors).length],
+    ['التعارضات', conflicts.filter(c=>c.severity==='error').length],
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cfg), 'الإعدادات');
+  
+  XLSX.writeFile(wb, 'جدول_الاختبارات_الشامل.xlsx');
+  showNotification('success', '✓ تم التصدير', 'الملف الشامل');
+}
+
+function exportScheduleOnly() {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, buildScheduleSheet(), 'الجدول');
+  XLSX.writeFile(wb, 'جدول_الاختبارات.xlsx');
+}
+
+function exportSupervisorsOnly() {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, buildSupervisorsSheet(), 'المراقبين');
+  XLSX.writeFile(wb, 'جدول_المراقبين.xlsx');
+}
+
+// ============ PDF Export - بتنسيق رسمي مطابق للنموذج ============
+
+// تخزين الشعارات
+window._pdfLogos = { college: null, vision: null };
+
+function loadLogo(inputId, previewId) {
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    if (inputId === 'pdfLogoCollege') window._pdfLogos.college = dataUrl;
+    else if (inputId === 'pdfLogoVision') window._pdfLogos.vision = dataUrl;
+    preview.innerHTML = `<img src="${dataUrl}" style="max-height:50px; max-width:100px; border:1px solid #ddd; padding:4px; background:white;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+// أيام الأسبوع (الأحد = أول يوم في أسبوع العمل)
+const WORK_DAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+
+// تحويل أرقام لاتينية لأرقام عربية هندية
+function toArabicHinduDigits(str) {
+  const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return String(str).replace(/\d/g, d => arabic[parseInt(d)]);
+}
+
+// زيادة تاريخ هجري: نفترض الشهر 30 يوم
+function addHijriDays(dateStr, days) {
+  if (!dateStr) return '';
+  const m = dateStr.match(/(\d+)[\/\-](\d+)[\/\-](\d+)/);
+  if (!m) return dateStr;
+  let year = parseInt(m[1]);
+  let month = parseInt(m[2]);
+  let day = parseInt(m[3]);
+  day += days;
+  while (day > 30) {
+    day -= 30;
+    month++;
+    if (month > 12) { month = 1; year++; }
+  }
+  return `${year}/${month}/${day}`;
+}
+
+// تنسيق تاريخ هجري بالأرقام العربية الهندية
+function formatHijriDate(dateStr) {
+  if (!dateStr) return '';
+  return toArabicHinduDigits(dateStr);
+}
+
+// خريطة أيام التطبيق إلى أيام الأسبوع (يبدأ من اليوم المحدد، يعمل 5 أيام، يقفز للأسبوع التالي)
+function getDayInfo(dayIndex, startDate) {
+  // اليوم الذي تبدأ منه الاختبارات (الأحد=0، الاثنين=1، ...، الخميس=4)
+  const startDay = parseInt(document.getElementById('pdfStartDay')?.value || '0');
+  
+  // الأيام المتاحة في أسبوع العمل: من startDay إلى الخميس (4)
+  // مثال: لو startDay=2 (الثلاثاء) → الأيام المتاحة: الثلاثاء، الأربعاء، الخميس (3 أيام في الأسبوع الأول)
+  // ثم الأسبوع التالي: الأحد، الاثنين، الثلاثاء، الأربعاء، الخميس (5 أيام)
+  
+  let curDayIdx = 0;
+  let curDow = startDay;
+  let dateOffset = 0;
+  let weekIndex = 0;
+  
+  while (curDayIdx < dayIndex) {
+    curDayIdx++;
+    if (curDow === 4) {
+      // الخميس → نقفز للأحد التالي (3 أيام: الجمعة، السبت، ثم الأحد)
+      curDow = 0;
+      dateOffset += 3;
+      weekIndex++;
+    } else {
+      curDow++;
+      dateOffset++;
+    }
+  }
+  
+  return {
+    name: WORK_DAYS[curDow],
+    date: formatHijriDate(addHijriDays(startDate, dateOffset)),
+    weekIndex,
+    dayInWeek: curDow,
+  };
+}
+
+// تنسيق وقت الفترة
+function formatPeriodTime(p) {
+  return `${p.start} - ${p.end}`;
+}
+
+// تقصير رقم القاعة/المعمل
+// استخراج رقم القاعة فقط (بدون كلمة "قاعه")
+function getRoomNumber(labCode, labDesc) {
+  const text = (labDesc || '') + ' ' + (labCode || '');
+  // ابحث عن "قاعه N" أو "قاعة N"
+  const m = text.match(/قاع[ةه]\s*(\d+)/);
+  if (m) return m[1];
+  // وإلا آخر رقم
+  const digits = text.replace(/[^\d]/g, '');
+  if (digits.length >= 2) {
+    let num = digits.slice(-2);
+    if (digits.length === 3 && digits[0] === '0') num = digits.slice(1);
+    return num.replace(/^0+/, '') || num;
+  }
+  return digits;
+}
+
+// استخراج اسم المعمل من وصف القاعة
+function getLabName(labDesc) {
+  if (!labDesc) return '';
+  // إذا الوصف يبدأ بـ "معمل" نأخذه كما هو لكن بدون الرقم
+  // مثل "معمل الجرافيك 17" → "معمل الجرافيك"
+  // مثل "معمل 17" → "معمل"
+  let name = labDesc.replace(/\d+/g, '').trim();
+  // نحذف "قاعه/قاعة" لو موجودة
+  name = name.replace(/قاع[ةه]/g, '').trim();
+  // نحذف الفواصل الزائدة
+  name = name.replace(/[\-،,]+$/g, '').trim();
+  return name || 'معمل';
+}
+
+// النسخة القديمة للتوافق
+function shortLabName(labCode, labDesc) {
+  const num = getRoomNumber(labCode, labDesc);
+  return num ? `قاعه ${num}` : (labDesc || labCode || '');
+}
+
+// تقسيم المتدربين على القاعات لكل مقرر
+function distributeStudentsToLabs(course, slot) {
+  const result = []; // [{labCode, labDesc, studentCount}]
+  if (!course) return result;
+  
+  // كل المتدربات في هذا المقرر
+  const allStudents = new Set();
+  course.sections.forEach(s => s.students.forEach(st => allStudents.add(st)));
+  let remaining = allStudents.size;
+  
+  // المعامل المخصصة لهذه الفترة - نأخذ الفائضة بعد المقررات السابقة
+  const placedHere = Object.entries(placements)
+    .filter(([, s]) => parseInt(s) === slot)
+    .map(([code]) => courses.find(c => c.code === code))
+    .filter(Boolean);
+  
+  let labOffset = 0;
+  for (const c of placedHere) {
+    if (c.code === course.code) break;
+    labOffset += c.labsNeeded;
+  }
+  
+  for (let i = 0; i < course.labsNeeded; i++) {
+    const labIdx = labOffset + i;
+    if (labIdx >= labs.length) break;
+    const lab = labs[labIdx];
+    const cap = lab.capacity || CONFIG.labCapacity;
+    const cnt = Math.min(remaining, cap);
+    result.push({
+      labCode: lab.code,
+      labDesc: lab.desc,
+      studentCount: cnt,
+    });
+    remaining -= cnt;
+  }
+  return result;
+}
+
+// ============ Export PDF Helper ============
+async function exportPDFHTML(htmlContent, filename, orientation = 'landscape') {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'absolute';
+  iframe.style.left = '-9999px';
+  iframe.style.top = '0';
+  iframe.style.width = '1200px';
+  iframe.style.height = '1700px';
+  document.body.appendChild(iframe);
+  
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>${filename}</title>
+<style>
+  @page { size: A4 ${orientation}; margin: 1cm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Tajawal', 'Cairo', Arial, sans-serif;
+    padding: 0;
+    direction: rtl;
+    background: white;
+    color: #1A1A1A;
+    margin: 0;
+    font-size: 12px;
+  }
+  
+  /* الترويسة العلوية - بسيطة وأنيقة */
+  .top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px 12px;
+    border-bottom: 3px solid #2D8659;
+    margin-bottom: 0;
+  }
+  .top-header-text {
+    flex: 1;
+    text-align: right;
+    font-size: 13px;
+    line-height: 1.8;
+    font-weight: 700;
+    color: #1F2A37;
+  }
+  .top-header-text-en {
+    flex: 1;
+    text-align: left;
+    direction: ltr;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #1F2A37;
+    font-weight: 700;
+  }
+  .top-header-logo {
+    text-align: center;
+    flex: 0 0 auto;
+  }
+  .top-header-logo img {
+    height: 65px;
+    max-width: 110px;
+  }
+  
+  /* عنوان الجدول - أنيق مع شريط جانبي */
+  .table-title {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: #1F2A37;
+    margin: 18px auto 16px;
+    padding: 10px 30px;
+    display: inline-block;
+    width: auto;
+    position: relative;
+    letter-spacing: 0.5px;
+  }
+  .table-title-wrap {
+    text-align: center;
+    margin: 16px 0;
+  }
+  .table-title-en {
+    text-align: center;
+    font-size: 12px;
+    color: #5D6D7E;
+    font-style: italic;
+    direction: ltr;
+    margin-top: -6px;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  
+  /* تذييل الصفحة */
+  .page-footer {
+    text-align: center;
+    margin-top: 24px;
+    padding-top: 12px;
+    border-top: 2px solid #2D8659;
+    font-size: 12px;
+    font-weight: 700;
+    color: #2D8659;
+    letter-spacing: 0.3px;
+  }
+  .table-title::before, .table-title::after {
+    content: '';
+    display: inline-block;
+    width: 30px;
+    height: 2px;
+    background: #2D8659;
+    vertical-align: middle;
+    margin: 0 12px;
+  }
+  
+  /* الجدول الرئيسي - تصميم نظيف */
+  table.main-table {
+    width: calc(100% - 32px);
+    margin: 0 16px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 11px;
+    border: 1px solid #B5D6C3;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  table.main-table th, table.main-table td {
+    border: 1px solid #CBD5E0;
+    padding: 8px 6px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  /* الترويسة الرئيسية - لون داكن أنيق */
+  table.main-table th.period-header {
+    background: #DDF0E5;
+    color: #1A5A38;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 10px 6px;
+    border-bottom: 2px solid #2D8659;
+    letter-spacing: 0.3px;
+  }
+  table.main-table th.day-cell {
+    background: #DDF0E5;
+    color: #1A5A38;
+    font-weight: 700;
+    font-size: 12px;
+  }
+  /* الترويسة الفرعية - ألوان مميزة لكل عمود */
+  table.main-table th.sub-header {
+    color: #2C3E50;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 6px 3px;
+    border-bottom: 2px solid #BDC3C7;
+  }
+  /* عمود المقرر - برتقالي */
+  table.main-table th.sub-header:nth-child(3n+2) {
+    background: #FAF6E8;
+    border-bottom-color: #D4C170;
+  }
+  /* عمود الرمز - أخضر */
+  table.main-table th.sub-header:nth-child(3n+3) {
+    background: #FAF6E8;
+    border-bottom-color: #D4C170;
+  }
+  /* عمود المعمل - أزرق */
+  table.main-table th.sub-header:nth-child(3n+4) {
+    background: #FAF6E8;
+    border-bottom-color: #D4C170;
+  }
+  /* خلية اليوم - بلون ميز أيقوني */
+  table.main-table td.day-cell {
+    background: #F0F8F3;
+    font-weight: 700;
+    font-size: 12px;
+    width: 75px;
+    color: #1A5A38;
+    border-right: 2px solid #2D8659;
+  }
+  table.main-table td.day-cell .date {
+    display: block;
+    font-size: 9px;
+    font-weight: 500;
+    color: #5D6D7E;
+    margin-top: 4px;
+    direction: ltr;
+    background: white;
+    padding: 2px 4px;
+    border-radius: 3px;
+    display: inline-block;
+  }
+  table.main-table tbody tr:hover td:not(.day-cell) {
+    background: #FFF9E6;
+  }
+  /* أعمدة المحتوى - ألوان متناسقة */
+  table.main-table .course-col {
+    font-size: 10px;
+    color: #1F2A37;
+    font-weight: 700;
+    line-height: 1.4;
+    background: white;
+  }
+  table.main-table .code-col {
+    width: 60px;
+    font-size: 10px;
+    direction: ltr;
+    color: #2D8659;
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    background: #F7FBF8;
+  }
+  table.main-table .room-col {
+    width: 95px;
+    font-size: 9px;
+    color: #5D4E2A;
+    line-height: 1.5;
+    font-weight: 600;
+    background: #FDFBF3;
+  }
+  /* الصفوف الزوجية - تظليل خفيف يحافظ على ألوان الأعمدة */
+  table.main-table tbody tr:nth-child(even) .course-col {
+    background: #F8FAF9;
+  }
+  table.main-table tbody tr:nth-child(even) .code-col {
+    background: #EFF6F1;
+  }
+  table.main-table tbody tr:nth-child(even) .room-col {
+    background: #FAF6E8;
+  }
+  /* فواصل بين الفترات */
+  table.main-table th:nth-child(3n+2),
+  table.main-table td:nth-child(3n+2):not(.day-cell) {
+    border-right: 2px solid #2D8659;
+  }
+  
+  /* جدول المراقبين - نفس النمط */
+  table.supervisors-table {
+    width: calc(100% - 32px);
+    margin: 0 16px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 9px;
+    border: 1px solid #B5D6C3;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  table.supervisors-table th, table.supervisors-table td {
+    border: 1px solid #DEEBE3;
+    padding: 5px 4px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  table.supervisors-table th {
+    background: #DDF0E5;
+    color: #1A5A38;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 8px 4px;
+    border-bottom: 2px solid #2D8659;
+  }
+  table.supervisors-table th:first-child {
+    background: #FAF6E8;
+    color: #5D4E2A;
+    border-bottom-color: #D4C170;
+  }
+  table.supervisors-table td.sup-name {
+    font-weight: 700;
+    text-align: right;
+    background: #FDFBF3;
+    font-size: 10px;
+    color: #1F2A37;
+    padding-right: 10px;
+    border-right: 2px solid #D4C170;
+  }
+  table.supervisors-table tbody tr:nth-child(even) td:not(.sup-name) {
+    background: #F8FAF9;
+  }
+  table.supervisors-table tbody tr:nth-child(even) td.sup-name {
+    background: #FAF6E8;
+  }
+  table.supervisors-table .empty-slot {
+    color: #BDC3C7;
+    font-weight: 700;
+  }
+  
+  /* تذييل */
+  .footer {
+    text-align: center;
+    font-size: 10px;
+    color: #888;
+    margin-top: 14px;
+  }
+  
+  @media print {
+    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>${htmlContent}</body>
+</html>`);
+  doc.close();
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  iframe.contentWindow.focus();
+  iframe.contentWindow.print();
+  
+  setTimeout(() => document.body.removeChild(iframe), 3000);
+  
+  showNotification('success', '✓ جاهز للطباعة', `استخدمي "حفظ كـ PDF" من نافذة الطباعة`);
+}
+
+// ============ بناء ترويسة PDF ============
+function buildTopHeader() {
+  const college = (document.getElementById('pdfCollege')?.value || '').trim();
+  const collegeEn = (document.getElementById('pdfCollegeEn')?.value || '').trim();
+  const collegeLogo = window._pdfLogos?.college;
+  
+  return `<div class="top-header">
+    <div class="top-header-text">
+      المملكة العربية السعودية<br>
+      المؤسسة العامة للتدريب التقني والمهني<br>
+      ${college}
+    </div>
+    <div class="top-header-logo">
+      ${collegeLogo ? `<img src="${collegeLogo}" alt="شعار">` : ''}
+    </div>
+    <div class="top-header-text-en">
+      KINGDOM OF SAUDI ARABIA<br>
+      Technical and vocational Training corporation<br>
+      ${collegeEn}
+    </div>
+  </div>`;
+}
+
+function buildInfoBar() {
+  const major = (document.getElementById('pdfMajor')?.value || 'جميع التخصصات').trim();
+  const dept = (document.getElementById('pdfDept')?.value || 'جميع الأقسام').trim();
+  const today = new Date();
+  const monthsAr = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const printDate = `${toArabicHinduDigits(today.getDate())} ${monthsAr[today.getMonth()]} ${toArabicHinduDigits(today.getFullYear())}`;
+  
+  return `<div class="info-bar">
+    <div class="info-pill"><strong>القسم:</strong> ${dept}</div>
+    <div class="info-pill"><strong>التخصص:</strong> ${major}</div>
+    <div class="info-pill"><strong>تاريخ الطباعة:</strong> ${printDate}</div>
+  </div>`;
+}
+
+// ============ بناء جدول الاختبارات ============
+function buildExamTablePDF() {
+  const startDate = (document.getElementById('pdfStartDate')?.value || '').trim();
+  const periods = CURRENT_PERIODS;
+  const numPeriods = periods.length;
+  
+  // الترويسة العلوية للجدول (3 أعمدة لكل فترة: المقرر، الرمز، المعمل)
+  let header1 = '<tr><th rowspan="2" class="day-cell">اليوم / التاريخ</th>';
+  for (let p = 0; p < numPeriods; p++) {
+    const periodNamesAr = ['الفترة الأولى', 'الفترة الثانية', 'الفترة الثالثة', 'الفترة الرابعة', 'الفترة الخامسة', 'الفترة السادسة'];
+    const periodTitle = periodNamesAr[p] || `الفترة ${p + 1}`;
+    header1 += `<th colspan="3" class="period-header">${periodTitle}<br>${formatPeriodTime(periods[p])}</th>`;
+  }
+  header1 += '</tr>';
+  
+  let header2 = '<tr>';
+  for (let p = 0; p < numPeriods; p++) {
+    header2 += `<th class="sub-header">المقرر</th><th class="sub-header">الرمز</th><th class="sub-header">المعمل</th>`;
+  }
+  header2 += '</tr>';
+  
+  // بناء الصفوف لكل يوم
+  let bodyRows = '';
+  
+  for (let d = 0; d < CONFIG.numDays; d++) {
+    // لكل فترة، نجمع المقررات فيها (كل مقرر في صف واحد مع كل قاعاته مدمجة)
+    const periodCourses = [];
+    let maxRows = 0;
+    
+    for (let p = 0; p < numPeriods; p++) {
+      const slot = d * numPeriods + p;
+      const placedHere = Object.entries(placements)
+        .filter(([, s]) => parseInt(s) === slot)
+        .map(([code]) => courses.find(c => c.code === code))
+        .filter(Boolean);
+      
+      // لكل مقرر، نجمع كل قاعاته في نص واحد
+      const cellRows = [];
+      for (const c of placedHere) {
+        const labDist = distributeStudentsToLabs(c, slot);
+        if (labDist.length === 0) {
+          cellRows.push({ course: c, labText: '' });
+        } else {
+          const allRooms = [];
+          for (const ld of labDist) {
+            const roomNum = getRoomNumber(ld.labCode, ld.labDesc);
+            if (roomNum) allRooms.push(roomNum);
+          }
+          cellRows.push({ course: c, labText: allRooms.length > 0 ? `معمل (${allRooms.join('، ')})` : '' });
+        }
+      }
+      periodCourses.push(cellRows);
+      maxRows = Math.max(maxRows, cellRows.length);
+    }
+    
+    if (maxRows === 0) continue;
+    if (periodCourses.every(arr => arr.length === 0)) continue;
+    
+    const di = getDayInfo(d, startDate);
+    
+    for (let r = 0; r < maxRows; r++) {
+      bodyRows += '<tr>';
+      
+      if (r === 0) {
+        bodyRows += `<td class="day-cell" rowspan="${maxRows}">
+          ${di.name}
+          ${di.date ? `<span class="date">${di.date}</span>` : ''}
+        </td>`;
+      }
+      
+      for (let p = 0; p < numPeriods; p++) {
+        const cell = periodCourses[p][r];
+        if (cell) {
+          const c = cell.course;
+          const displayCode = c.isSplit ? c.baseCode : c.code;
+          // إذا المقرر منقسم، نضيف اسم التخصص لاسم المقرر
+          let courseName = c.name;
+          if (c.isSplit && c.specialtiesList && c.specialtiesList.length > 0) {
+            courseName = `${c.name} - تخصص ${c.specialtiesList[0]}`;
+          }
+          bodyRows += `<td class="course-col">${courseName}</td>`;
+          bodyRows += `<td class="code-col">${displayCode}</td>`;
+          bodyRows += `<td class="room-col">${cell.labText}</td>`;
+        } else {
+          bodyRows += '<td></td><td></td><td></td>';
+        }
+      }
+      bodyRows += '</tr>';
+    }
+  }
+  
+  return `<table class="main-table">
+    <thead>${header1}${header2}</thead>
+    <tbody>${bodyRows}</tbody>
+  </table>`;
+}
+
+// ============ تصدير جدول الاختبارات ============
+function exportSchedulePDF() {
+  if (Object.keys(placements).length === 0) {
+    showNotification('warning', 'لا يوجد ما يُصدر', 'وزعي المقررات أولاً');
+    return;
+  }
+  
+  const html = `
+    ${buildTopHeader()}
+    <div class="table-title-wrap">
+      <div class="table-title">جدول الاختبارات النهائية</div>
+      <div class="table-title-en">Final Exams Schedule</div>
+    </div>
+    ${buildExamTablePDF()}
+  `;
+  exportPDFHTML(html, 'جدول_الاختبارات.pdf', 'landscape');
+}
+
+// ============ بناء جدول المراقبين (مصفوفة: المراقبة × الأيام) ============
+function buildSupervisorsMatrix() {
+  const startDate = (document.getElementById('pdfStartDate')?.value || '').trim();
+  const numPeriods = CURRENT_PERIODS.length;
+  
+  // اجمع كل المراقبين الموزعة
+  // supervisors: key = "slot|labCode" → instructor
+  // نحول إلى: instructor → { day → [strings] }
+  
+  const instructorDays = {}; // name → { dayIdx → [strings] }
+  const allInstructors = new Set();
+  
+  for (const [key, inst] of Object.entries(supervisors)) {
+    const [slotStr, labCode] = key.split('|');
+    const slot = parseInt(slotStr);
+    const day = Math.floor(slot / numPeriods);
+    const period = (slot % numPeriods) + 1;
+    
+    // نجد المعمل
+    const lab = labs.find(l => l.code === labCode);
+    const roomNum = getRoomNumber(labCode, lab?.desc);
+    const labShort = `معمل ${roomNum}`;
+    
+    if (!instructorDays[inst]) instructorDays[inst] = {};
+    if (!instructorDays[inst][day]) instructorDays[inst][day] = [];
+    instructorDays[inst][day].push(`الفترة ${period} - ${labShort}`);
+    allInstructors.add(inst);
+  }
+  
+  // الأيام التي فيها اختبارات
+  const daysWithExams = [];
+  for (let d = 0; d < CONFIG.numDays; d++) {
+    let hasContent = false;
+    for (let p = 0; p < numPeriods; p++) {
+      const slot = d * numPeriods + p;
+      if (Object.keys(placements).some(c => parseInt(placements[c]) === slot)) {
+        hasContent = true;
+        break;
+      }
+    }
+    if (hasContent) daysWithExams.push(d);
+  }
+  
+  // الترويسة: المراقبة | يوم 1 | يوم 2 | ...
+  let header = '<tr><th>المراقبة</th>';
+  for (const d of daysWithExams) {
+    const di = getDayInfo(d, startDate);
+    header += `<th class="day-header">${di.name}<br><span style="font-weight:400; font-size:9px;">${di.date}</span></th>`;
+  }
+  header += '</tr>';
+  
+  // الصفوف
+  let bodyRows = '';
+  const sortedInstructors = [...allInstructors].sort();
+  
+  for (const inst of sortedInstructors) {
+    bodyRows += `<tr><td class="sup-name">${inst}</td>`;
+    for (const d of daysWithExams) {
+      const cells = instructorDays[inst]?.[d];
+      if (cells && cells.length > 0) {
+        bodyRows += `<td>${cells.join('<br>')}</td>`;
+      } else {
+        bodyRows += `<td class="empty-slot">-</td>`;
+      }
+    }
+    bodyRows += '</tr>';
+  }
+  
+  if (sortedInstructors.length === 0) {
+    return '<div style="text-align:center; padding:20px;">لم يتم إسناد أي مراقبين بعد</div>';
+  }
+  
+  return `<table class="supervisors-table">
+    <thead>${header}</thead>
+    <tbody>${bodyRows}</tbody>
+  </table>`;
+}
+
+function exportSupervisorsPDF() {
+  if (Object.keys(supervisors).length === 0) {
+    showNotification('warning', 'لا توجد مراقبين', 'وزعي المراقبين أولاً');
+    return;
+  }
+  
+  const numSupervisors = new Set(Object.values(supervisors)).size;
+  const numDays = CONFIG.numDays;
+  const today = new Date();
+  const monthsAr = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const printDate = `${toArabicHinduDigits(today.getDate())} ${monthsAr[today.getMonth()]} ${toArabicHinduDigits(today.getFullYear())}`;
+  
+  const html = `
+    ${buildTopHeader()}
+    <div class="table-title-wrap">
+      <div class="table-title">جدول المراقبين وفترات المراقبة</div>
+      <div class="table-title-en">Invigilators Schedule</div>
+    </div>
+    ${buildSupervisorsMatrix()}
+  `;
+  exportPDFHTML(html, 'جدول_المراقبين.pdf', 'landscape');
+}
+
+function exportFullPDF() {
+  exportSchedulePDF();
+}
+
+
+window.removeCourse = removeCourse;
+window.removeSupervisor = removeSupervisor;
+window.applyExclusions = applyExclusions;
+window.applyInstructorExclusions = applyInstructorExclusions;
+window.addManualInstructor = addManualInstructor;
+window.removeManualInstructor = removeManualInstructor;
+window.renderManualInstructors = renderManualInstructors;
+window.openHijriCalendar = openHijriCalendar;
+window.hijriCalNav = hijriCalNav;
+window.hijriCalGoToYear = hijriCalGoToYear;
+window.hijriCalGoToMonth = hijriCalGoToMonth;
+window.selectHijriDay = selectHijriDay;
+window.confirmHijriDate = confirmHijriDate;
+window.updateStartDayPreview = updateStartDayPreview;
+window.applySplits = applySplits;
+window.selectAllSplit = selectAllSplit;
+window.renderSplitList = renderSplitList;
+window.renderExcludeList = renderExcludeList;
+window.filterExcludeList = filterExcludeList;
+window.selectAllExclude = selectAllExclude;
+window.initializeApp = initializeApp;
+window.autoDistribute = autoDistribute;
+window.autoAssignSupervisors = autoAssignSupervisors;
+window.clearAll = clearAll;
+window.clearSupervisors = clearSupervisors;
+window.exportFullExcel = exportFullExcel;
+window.exportScheduleOnly = exportScheduleOnly;
+window.exportSupervisorsOnly = exportSupervisorsOnly;
+window.exportFullPDF = exportFullPDF;
+window.exportSchedulePDF = exportSchedulePDF;
+window.exportSupervisorsPDF = exportSupervisorsPDF;
+window.loadLogo = loadLogo;
+window.renderPeriodTimes = renderPeriodTimes;
+window.updatePeriodTime = updatePeriodTime;
+window.resetPeriodTimes = resetPeriodTimes;
+window.setFilter = setFilter;
+window.buildDynamicFilters = buildDynamicFilters;
+window.renderCoursePool = renderCoursePool;
+window.renderInstructorPool = renderInstructorPool;
+window.switchTab = switchTab;
+</script>
+
+<!-- Split shared courses modal -->
+<dialog id="splitModal" style="border:none; border-radius:14px; padding:0; max-width:600px; width:90%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:var(--primary); margin-bottom:8px;">✂️ تقسيم المقررات المشتركة</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      المقررات المشتركة بين تخصصين أو أكثر ستنقسم لكتل منفصلة حسب التخصص، 
+      كل تخصص يختبر في فترة مستقلة. هذا مفيد للمقررات الكبيرة التي تتجاوز سعة المعامل.
+    </p>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button class="btn btn-accent" onclick="selectAllSplit(true)" style="flex:1;">✓ تحديد الكل</button>
+      <button class="btn btn-secondary" onclick="selectAllSplit(false)" style="flex:1;">✗ إلغاء التحديد</button>
+    </div>
+    <div id="splitList" style="max-height:400px; overflow-y:auto; margin-bottom:14px;"></div>
+    <div style="background:#FFF8E7; border-radius:8px; padding:10px; font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+      💡 <strong>ملاحظة:</strong> بعد التقسيم، يصبح المقرر عدة كتل مستقلة يمكن وضع كل منها في فترة مختلفة.
+    </div>
+    <div style="display:flex; gap:10px; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="document.getElementById('splitModal').close()">إلغاء</button>
+      <button class="btn btn-primary" onclick="applySplits()">تطبيق التقسيم</button>
+    </div>
+  </div>
+</dialog>
+
+</body>
+</html>

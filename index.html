@@ -3,10 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>منظم جدول الاختبارات - متكامل</title>
+<title>منظم جدول الاختبارات النهائية | TVTC</title>
+<meta name="description" content="أداة لتنظيم جداول الاختبارات النهائية والمراقبين بشكل تلقائي - الكليات التقنية">
+<meta name="keywords" content="جدول اختبارات, مراقبين, TVTC, الكلية التقنية, اختبارات نهائية">
+<meta name="author" content="غدي يوسف المكتوم">
+<meta property="og:title" content="منظم جدول الاختبارات النهائية">
+<meta property="og:description" content="أداة لتنظيم جداول الاختبارات والمراقبين تلقائياً">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
 <style>
@@ -783,6 +791,12 @@ body {
         <button class="btn btn-secondary" onclick="renderManualInstructors(); document.getElementById('addInstructorsModal').showModal()">
           ➕ إضافة مدربين
         </button>
+        <button class="btn btn-secondary" onclick="renderInstructorLimits(); document.getElementById('instructorLimitsModal').showModal()">
+          🎯 تحديد سقف المراقبات
+        </button>
+        <button class="btn btn-secondary" onclick="renderInstructorDays(); document.getElementById('instructorDaysModal').showModal()">
+          📅 أيام المراقبة لكل مدرب
+        </button>
         <button class="btn btn-secondary" onclick="renderSplitList(); document.getElementById('splitModal').showModal()">
           ✂️ تقسيم المقررات المشتركة
         </button>
@@ -1078,12 +1092,59 @@ body {
   </div>
 </dialog>
 
+<dialog id="instructorDaysModal" style="border:none; border-radius:14px; padding:0; max-width:850px; width:95%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:#2D8659; margin-bottom:8px;">📅 أيام المراقبة لكل مدربة</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      حددي الأيام التي تستطيع كل مدربة المراقبة فيها. اتركي الكل بدون تحديد لتكون المدربة متاحة كل الأيام.
+    </p>
+    
+    <div style="display:flex; gap:8px; margin-bottom:12px; padding:10px; background:#F0F8F3; border-radius:8px; align-items:center; flex-wrap:wrap;">
+      <span style="font-size:12px; color:#1A5A38; flex:1; font-weight:700;">⚡ تحديد سريع:</span>
+      <button onclick="selectAllDaysForAll()" class="btn btn-secondary" style="padding:5px 12px; font-size:12px; background:#DDF0E5; color:#1A5A38;">✓ متاحة كل الأيام</button>
+      <button onclick="clearAllDaysForAll()" class="btn btn-secondary" style="padding:5px 12px; font-size:12px;">مسح كل التحديدات</button>
+    </div>
+    
+    <div id="instructorDaysList" style="max-height:450px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;"></div>
+    
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+      <button class="btn btn-secondary" onclick="document.getElementById('instructorDaysModal').close()">إغلاق</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="instructorLimitsModal" style="border:none; border-radius:14px; padding:0; max-width:600px; width:90%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:#2D8659; margin-bottom:8px;">🎯 تحديد سقف المراقبات</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      حددي العدد الأقصى من المراقبات لكل مدربة. اتركي الحقل فارغاً لعدم وضع سقف.
+    </p>
+    
+    <div style="display:flex; gap:8px; margin-bottom:12px; padding:10px; background:#F0F8F3; border-radius:8px; align-items:center;">
+      <span style="font-size:12px; color:#1A5A38; flex:1;">⚡ سقف موحد لكل المدربات (تطبيق سريع):</span>
+      <input type="number" id="bulkLimit" min="0" max="50" style="width:70px; padding:5px; border:1px solid #B5D6C3; border-radius:6px; font-size:13px;" placeholder="مثل: 5">
+      <button class="btn btn-primary" onclick="applyBulkLimit()" style="padding:5px 14px; background:#2D8659;">تطبيق على الكل</button>
+    </div>
+    
+    <div id="instructorLimitsList" style="max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:8px;"></div>
+    
+    <div style="display:flex; gap:10px; justify-content:space-between; margin-top:14px;">
+      <button class="btn btn-secondary" onclick="clearAllLimits()" style="background:#FFE4E1; color:var(--danger);">🗑️ مسح كل السقوف</button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn btn-secondary" onclick="document.getElementById('instructorLimitsModal').close()">إغلاق</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
 <script>
 // ============ State ============
 let courses = [];
 let students = {};
 let instructors = [];
 let manualInstructors = []; // المدربين المضافين يدوياً (غير الموجودين في CSV)
+let instructorLimits = {}; // سقف المراقبات لكل مدربة { اسم: عدد }
+let instructorAvailableDays = {}; // أيام المراقبة لكل مدربة { اسم: [0,2,4] = الأحد والثلاثاء والخميس }
 let labs = [];
 let placements = {};       // courseCode -> slotIdx
 let supervisors = {};      // `${slotIdx}|${labCode}` -> instructorName
@@ -1737,6 +1798,190 @@ function renderManualInstructors() {
               style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px; padding:4px 8px;">×</button>
     </div>
   `).join('');
+}
+
+// ============ سقف المراقبات لكل مدربة ============
+function renderInstructorLimits() {
+  const list = document.getElementById('instructorLimitsList');
+  if (!list) return;
+  
+  if (instructors.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">
+      لا يوجد مدربين بعد. ارفعي ملف المتدربين أولاً
+    </div>`;
+    return;
+  }
+  
+  // عدد المراقبات الحالية لكل مدربة
+  const currentCounts = {};
+  Object.values(supervisors || {}).forEach(name => {
+    currentCounts[name] = (currentCounts[name] || 0) + 1;
+  });
+  
+  list.innerHTML = instructors.map(name => {
+    const limit = instructorLimits[name];
+    const current = currentCounts[name] || 0;
+    const isExcluded = excludedInstructors.has(name);
+    const safeName = name.replace(/'/g, "\\'");
+    
+    return `
+      <div style="display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--border); ${isExcluded ? 'opacity:0.5;' : ''}">
+        <span style="flex:1; font-size:13px;">👤 ${name}${isExcluded ? ' <span style="color:var(--danger); font-size:11px;">(مستبعدة)</span>' : ''}</span>
+        <span style="font-size:11px; color:var(--text-muted);">حالياً: ${current}</span>
+        <input type="number" min="0" max="50" value="${limit !== undefined ? limit : ''}" 
+               placeholder="بلا سقف"
+               onchange="saveInstructorLimit('${safeName}', this.value)"
+               style="width:80px; padding:6px; border:1px solid #B5D6C3; border-radius:6px; font-size:13px; text-align:center;">
+      </div>
+    `;
+  }).join('');
+}
+
+function saveInstructorLimit(name, value) {
+  const v = parseInt(value);
+  if (isNaN(v) || value === '') {
+    delete instructorLimits[name];
+  } else if (v >= 0) {
+    instructorLimits[name] = v;
+  }
+}
+
+function applyBulkLimit() {
+  const v = parseInt(document.getElementById('bulkLimit').value);
+  if (isNaN(v) || v < 0) {
+    showNotification('warning', 'قيمة غير صحيحة', 'أدخلي رقماً صحيحاً');
+    return;
+  }
+  instructors.forEach(name => { instructorLimits[name] = v; });
+  renderInstructorLimits();
+  showNotification('success', '✓ تم التطبيق', `سقف ${v} مراقبة لكل المدربات`);
+}
+
+function clearAllLimits() {
+  if (!confirm('مسح كل السقوف؟')) return;
+  instructorLimits = {};
+  renderInstructorLimits();
+  showNotification('success', 'تم المسح', 'تم إلغاء كل السقوف');
+}
+
+// ============ أيام المراقبة لكل مدربة ============
+function renderInstructorDays() {
+  const list = document.getElementById('instructorDaysList');
+  if (!list) return;
+  
+  if (instructors.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">
+      لا يوجد مدربين بعد. ارفعي ملف المتدربين أولاً
+    </div>`;
+    return;
+  }
+  
+  // أسماء الأيام بناءً على numDays
+  const dayLabels = [];
+  for (let d = 0; d < CONFIG.numDays; d++) {
+    dayLabels.push(`اليوم ${d + 1}`);
+  }
+  
+  let html = '';
+  instructors.forEach(name => {
+    const isExcluded = excludedInstructors.has(name);
+    const safeName = name.replace(/'/g, "\\'");
+    const days = instructorAvailableDays[name] || [];
+    const isAllAvailable = days.length === 0; // فارغ = متاحة كل الأيام
+    
+    html += `
+      <div style="padding:10px 12px; border-bottom:1px solid var(--border); ${isExcluded ? 'opacity:0.5;' : ''}">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <span style="flex:1; font-size:13px; font-weight:700;">👤 ${name}${isExcluded ? ' <span style="color:var(--danger); font-size:11px;">(مستبعدة)</span>' : ''}</span>
+          <span style="font-size:11px; color:${isAllAvailable ? '#2D8659' : '#5D6D7E'};">
+            ${isAllAvailable ? '✓ متاحة كل الأيام' : `${days.length} يوم محدد`}
+          </span>
+          <button onclick="toggleAllDaysForInstructor('${safeName}')" 
+                  style="font-size:11px; padding:3px 10px; background:#FAF6E8; border:1px solid #D4C170; border-radius:5px; cursor:pointer;">
+            ${isAllAvailable ? 'تحديد أيام معينة' : 'متاحة كل الأيام'}
+          </button>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; padding-right:24px;">
+          ${dayLabels.map((label, idx) => {
+            const isSelected = days.includes(idx);
+            const allDaysSelected = isAllAvailable;
+            return `
+              <label style="display:inline-flex; align-items:center; gap:4px; padding:5px 10px; 
+                            background:${isSelected || allDaysSelected ? '#DDF0E5' : '#F8F8F8'}; 
+                            border:1px solid ${isSelected || allDaysSelected ? '#2D8659' : '#ddd'}; 
+                            border-radius:6px; cursor:pointer; font-size:11px; font-weight:${isSelected || allDaysSelected ? '700' : '500'};
+                            color:${isSelected || allDaysSelected ? '#1A5A38' : '#666'};">
+                <input type="checkbox" ${isSelected || allDaysSelected ? 'checked' : ''} 
+                       onchange="toggleInstructorDay('${safeName}', ${idx}, this.checked)"
+                       style="cursor:pointer;">
+                ${label}
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+  
+  list.innerHTML = html;
+}
+
+function toggleInstructorDay(name, dayIdx, isChecked) {
+  if (!instructorAvailableDays[name]) {
+    // أول مرة - نعتبرها كانت "كل الأيام" ونحدد كلها ثم نشيل/نضيف
+    instructorAvailableDays[name] = [];
+    for (let i = 0; i < CONFIG.numDays; i++) instructorAvailableDays[name].push(i);
+  }
+  
+  if (isChecked) {
+    if (!instructorAvailableDays[name].includes(dayIdx)) {
+      instructorAvailableDays[name].push(dayIdx);
+      instructorAvailableDays[name].sort((a, b) => a - b);
+    }
+  } else {
+    instructorAvailableDays[name] = instructorAvailableDays[name].filter(d => d !== dayIdx);
+  }
+  
+  // إذا اختارت كل الأيام، احذف القيد (يعني "متاحة كل الأيام")
+  if (instructorAvailableDays[name].length === CONFIG.numDays) {
+    delete instructorAvailableDays[name];
+  } else if (instructorAvailableDays[name].length === 0) {
+    // لو شالت كل الأيام، احذف القيد أيضاً (يعتبر متاحة كل الأيام)
+    delete instructorAvailableDays[name];
+  }
+  
+  renderInstructorDays();
+}
+
+function toggleAllDaysForInstructor(name) {
+  if (instructorAvailableDays[name]) {
+    // عندها قيد - شيليه (تصير متاحة كل الأيام)
+    delete instructorAvailableDays[name];
+  } else {
+    // متاحة كل الأيام - حدديها بأيام محددة (نبدأ ببدون أيام)
+    instructorAvailableDays[name] = [];
+  }
+  renderInstructorDays();
+}
+
+function selectAllDaysForAll() {
+  instructorAvailableDays = {};
+  renderInstructorDays();
+  showNotification('success', '✓ تم', 'كل المدربات متاحات في كل الأيام');
+}
+
+function clearAllDaysForAll() {
+  if (!confirm('مسح كل التحديدات؟ ستصبح كل المدربات متاحات في كل الأيام.')) return;
+  instructorAvailableDays = {};
+  renderInstructorDays();
+  showNotification('success', 'تم المسح', 'كل المدربات متاحات في كل الأيام');
+}
+
+// فحص: هل المدربة متاحة في يوم معين؟
+function isInstructorAvailableOnDay(name, dayIdx) {
+  const days = instructorAvailableDays[name];
+  if (!days || days.length === 0) return true; // متاحة كل الأيام
+  return days.includes(dayIdx);
 }
 
 // ============ التقويم الهجري ============
@@ -2839,10 +3084,19 @@ function renderSupervisorTables() {
   const container = document.getElementById('supervisorTables');
   const periods = PERIOD_TIMES[CONFIG.numPeriods];
   
+  // احفظي حالة الأيام المفتوحة قبل إعادة الرسم
+  const openDays = new Set();
+  container.querySelectorAll('details[data-day]').forEach(d => {
+    if (d.open) openDays.add(parseInt(d.dataset.day));
+  });
+  // لو ما في حالة محفوظة (أول مرة)، افتحي اليوم الأول افتراضياً
+  const isFirstRender = openDays.size === 0 && container.children.length === 0;
+  
   let html = '';
   for (let day = 0; day < CONFIG.numDays; day++) {
     let dayHasContent = false;
-    let dayHtml = `<details ${day === 0 ? 'open' : ''} style="margin-bottom:12px; border:1px solid var(--border); border-radius:10px; padding:12px; background:white;">
+    const isOpen = isFirstRender ? (day === 0) : openDays.has(day);
+    let dayHtml = `<details data-day="${day}" ${isOpen ? 'open' : ''} style="margin-bottom:12px; border:1px solid var(--border); border-radius:10px; padding:12px; background:white;">
       <summary style="cursor:pointer; font-family:'Cairo'; font-weight:700; color:var(--primary);">📅 اليوم ${day+1}</summary>`;
     
     for (let period = 0; period < CONFIG.numPeriods; period++) {
@@ -2932,6 +3186,27 @@ function assignSupervisor(key, slotIdx, instructor) {
     }
   }
   
+  // افحص: هل تجاوزت سقف المراقبات؟
+  const limit = instructorLimits[instructor];
+  if (limit !== undefined) {
+    const currentCount = Object.entries(supervisors)
+      .filter(([k, v]) => v === instructor && k !== key)
+      .length;
+    if (currentCount >= limit) {
+      if (!confirm(`⚠️ ${instructor} وصلت للسقف المحدد (${limit} مراقبة).\n\nهل تريدين تجاوز السقف وإسنادها؟`)) {
+        return;
+      }
+    }
+  }
+  
+  // افحص: هل المدربة متاحة في هذا اليوم؟
+  const day = Math.floor(slotIdx / CONFIG.numPeriods);
+  if (!isInstructorAvailableOnDay(instructor, day)) {
+    if (!confirm(`⚠️ ${instructor} غير متاحة في اليوم ${day + 1}.\n\nهل تريدين إسنادها رغم ذلك؟`)) {
+      return;
+    }
+  }
+  
   supervisors[key] = instructor;
   renderSupervisorTables();
   renderInstructorPool();
@@ -2958,6 +3233,7 @@ function autoAssignSupervisors() {
   supervisors = {};
   const available = instructors.filter(i => !excludedInstructors.has(i));
   const counts = {}; available.forEach(i => counts[i] = 0);
+  let unfilledSlots = 0; // عدد الخانات اللي ما حصلت مراقبة بسبب السقف
   
   // لكل فترة
   for (let slot = 0; slot < CONFIG.numDays * CONFIG.numPeriods; slot++) {
@@ -2965,11 +3241,21 @@ function autoAssignSupervisors() {
       .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
     if (placedHere.length === 0) continue;
     
+    const day = Math.floor(slot / CONFIG.numPeriods);
+    
     // المدربات المشغولات في هذي الفترة
     const busy = new Set();
     placedHere.forEach(c => c.sections.forEach(s => { if (s.instructor) busy.add(s.instructor); }));
     
-    const free = available.filter(i => !busy.has(i)).sort((a, b) => counts[a] - counts[b]);
+    // المتاحات: غير مشغولات + لم تتجاوزن السقف + متاحات في هذا اليوم
+    const free = available
+      .filter(i => !busy.has(i))
+      .filter(i => {
+        const limit = instructorLimits[i];
+        return limit === undefined || counts[i] < limit;
+      })
+      .filter(i => isInstructorAvailableOnDay(i, day))
+      .sort((a, b) => counts[a] - counts[b]);
     
     let labIdx = 0, freeIdx = 0;
     for (const c of placedHere) {
@@ -2981,6 +3267,8 @@ function autoAssignSupervisors() {
           supervisors[key] = free[freeIdx];
           counts[free[freeIdx]]++;
           freeIdx++;
+        } else {
+          unfilledSlots++;
         }
       }
     }
@@ -2990,7 +3278,13 @@ function autoAssignSupervisors() {
   renderInstructorPool();
   detectConflicts();
   updateStats();
-  showNotification('success', '✓ التوزيع التلقائي للمراقبين تم', `${Object.keys(supervisors).length} مراقبة`);
+  
+  if (unfilledSlots > 0) {
+    showNotification('warning', '⚠️ التوزيع تم مع تنبيه', 
+      `${Object.keys(supervisors).length} مراقبة موزعة، ${unfilledSlots} خانة فارغة بسبب تجاوز السقف`);
+  } else {
+    showNotification('success', '✓ التوزيع التلقائي للمراقبين تم', `${Object.keys(supervisors).length} مراقبة`);
+  }
 }
 
 function clearSupervisors() {
@@ -3026,53 +3320,470 @@ function updateExportStats() {
 }
 
 function buildScheduleSheet() {
-  const periods = PERIOD_TIMES[CONFIG.numPeriods];
-  const rows = [['اليوم', 'الفترة', 'الوقت', 'المقرر', 'اسم المقرر', 'المستوى', 'التخصص', 'عدد المتدربات', 'المعامل', 'الشعب']];
+  const periods = CURRENT_PERIODS;
+  const numPeriods = periods.length;
+  const startDate = (document.getElementById('pdfStartDate')?.value || '').trim();
+  const college = (document.getElementById('pdfCollege')?.value || 'الكلية التقنية للبنات بالبدائع').trim();
+  const collegeEn = (document.getElementById('pdfCollegeEn')?.value || 'Albdayea Technical College for Girls').trim();
+  const dept = (document.getElementById('pdfDept')?.value || 'جميع الأقسام').trim();
+  const major = (document.getElementById('pdfMajor')?.value || 'جميع التخصصات').trim();
+  
+  const periodNamesAr = ['الفترة الأولى', 'الفترة الثانية', 'الفترة الثالثة', 'الفترة الرابعة', 'الفترة الخامسة', 'الفترة السادسة'];
+  
+  const rows = [];
+  
+  // ----- الترويسة -----
+  rows.push(['المملكة العربية السعودية', '', '', '', '', '', '', '', '', '', '', '', 'KINGDOM OF SAUDI ARABIA']);
+  rows.push(['المؤسسة العامة للتدريب التقني والمهني', '', '', '', '', '', '', '', '', '', '', '', 'Technical and vocational Training corporation']);
+  rows.push([college, '', '', '', '', '', '', '', '', '', '', '', collegeEn]);
+  rows.push([]);
+  
+  // ----- العنوان -----
+  rows.push(['', '', '', '', '', 'جدول الاختبارات النهائية - Final Exams Schedule']);
+  rows.push([]);
+  
+  // ----- معلومات إضافية -----
+  rows.push([`القسم: ${dept}`, '', '', `التخصص: ${major}`]);
+  rows.push([]);
+  
+  // ----- ترويسة الجدول الرئيسية: اليوم + كل الفترات (3 خلايا لكل فترة) -----
+  const headerRow1 = ['اليوم / التاريخ'];
+  for (let p = 0; p < numPeriods; p++) {
+    const periodTitle = periodNamesAr[p] || `الفترة ${p + 1}`;
+    headerRow1.push(`${periodTitle}\n${periods[p].start} - ${periods[p].end}`, '', '');
+  }
+  rows.push(headerRow1);
+  
+  // ----- ترويسة فرعية: المقرر، الرمز، المعمل -----
+  const headerRow2 = [''];
+  for (let p = 0; p < numPeriods; p++) {
+    headerRow2.push('المقرر', 'الرمز', 'المعمل');
+  }
+  rows.push(headerRow2);
+  
+  // ----- البيانات: لكل يوم -----
   for (let d = 0; d < CONFIG.numDays; d++) {
-    for (let p = 0; p < CONFIG.numPeriods; p++) {
-      const slot = d * CONFIG.numPeriods + p;
-      const placed = Object.entries(placements).filter(([, s]) => s === slot)
-        .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
-      for (const c of placed) {
-        rows.push([
-          `يوم ${d+1}`, `الفترة ${p+1}`, periods[p],
-          c.code, c.name, `المستوى ${c.level || '?'}`,
-          c.specialtiesList.join(' / '),
-          c.totalStudents, c.labsNeeded,
-          c.sections.map(s => s.id).join('، ')
-        ]);
+    // اجمع المقررات لكل فترة في هذا اليوم
+    const periodCourses = [];
+    let maxRows = 0;
+    
+    for (let p = 0; p < numPeriods; p++) {
+      const slot = d * numPeriods + p;
+      const placedHere = Object.entries(placements)
+        .filter(([, s]) => s === slot)
+        .map(([code]) => courses.find(c => c.code === code))
+        .filter(Boolean);
+      
+      const cellRows = [];
+      for (const c of placedHere) {
+        const labDist = distributeStudentsToLabs(c, slot);
+        if (labDist.length === 0) {
+          cellRows.push({ course: c, labText: '' });
+        } else {
+          const allRooms = [];
+          for (const ld of labDist) {
+            const roomNum = getRoomNumber(ld.labCode, ld.labDesc);
+            if (roomNum) allRooms.push(roomNum);
+          }
+          cellRows.push({ course: c, labText: allRooms.length > 0 ? `معمل (${allRooms.join('، ')})` : '' });
+        }
+      }
+      periodCourses.push(cellRows);
+      maxRows = Math.max(maxRows, cellRows.length);
+    }
+    
+    if (maxRows === 0) continue;
+    
+    const di = getDayInfo(d, startDate);
+    const dayLabel = di.date ? `${di.name}\n${di.date}` : di.name;
+    
+    for (let r = 0; r < maxRows; r++) {
+      const row = [r === 0 ? dayLabel : ''];
+      for (let p = 0; p < numPeriods; p++) {
+        const cell = periodCourses[p][r];
+        if (cell) {
+          const c = cell.course;
+          const displayCode = c.isSplit ? c.baseCode : c.code;
+          let courseName = c.name;
+          if (c.isSplit && c.specialtiesList && c.specialtiesList.length > 0) {
+            courseName = `${c.name} - تخصص ${c.specialtiesList[0]}`;
+          }
+          row.push(courseName, displayCode, cell.labText);
+        } else {
+          row.push('', '', '');
+        }
+      }
+      rows.push(row);
+    }
+  }
+  
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  
+  // ----- التنسيق: ألوان وعرض أعمدة -----
+  const totalCols = 1 + numPeriods * 3;
+  
+  // عرض الأعمدة
+  const colWidths = [{ wch: 18 }]; // اليوم
+  for (let p = 0; p < numPeriods; p++) {
+    colWidths.push({ wch: 30 }); // المقرر
+    colWidths.push({ wch: 12 }); // الرمز
+    colWidths.push({ wch: 18 }); // المعمل
+  }
+  // ضمان عرض كافٍ للترويسة الإنجليزية
+  while (colWidths.length < 14) colWidths.push({ wch: 25 });
+  ws['!cols'] = colWidths;
+  
+  // ارتفاع الصفوف للترويسة
+  ws['!rows'] = [
+    { hpt: 22 }, { hpt: 22 }, { hpt: 22 }, // الترويسة
+    { hpt: 8 },
+    { hpt: 32 }, // العنوان
+    { hpt: 8 },
+    { hpt: 22 }, // معلومات
+    { hpt: 8 },
+    { hpt: 38 }, // ترويسة الجدول 1
+    { hpt: 22 }, // ترويسة الجدول 2
+  ];
+  
+  // ----- دمج الخلايا -----
+  ws['!merges'] = ws['!merges'] || [];
+  // عنوان الجدول (دمج كل الأعمدة في الصف 5)
+  ws['!merges'].push({ s: { r: 4, c: 0 }, e: { r: 4, c: totalCols - 1 } });
+  
+  // دمج معلومات (القسم + التخصص)
+  ws['!merges'].push({ s: { r: 6, c: 0 }, e: { r: 6, c: 2 } });
+  ws['!merges'].push({ s: { r: 6, c: 3 }, e: { r: 6, c: totalCols - 1 } });
+  
+  // دمج ترويسة كل فترة في 3 خلايا
+  for (let p = 0; p < numPeriods; p++) {
+    const startCol = 1 + p * 3;
+    ws['!merges'].push({ s: { r: 8, c: startCol }, e: { r: 8, c: startCol + 2 } });
+  }
+  // دمج عمود اليوم في الصفين 9 و 10 (الترويسة)
+  ws['!merges'].push({ s: { r: 8, c: 0 }, e: { r: 9, c: 0 } });
+  
+  // ----- التنسيق (الألوان والخطوط) -----
+  // ملاحظة: SheetJS المجاني محدود في التنسيق، نستخدم ما يمكن
+  const headerRowsRange = [0, 1, 2]; // ترويسة المؤسسة
+  const titleRow = 4;
+  const infoRow = 6;
+  const tableHeaderRows = [8, 9];
+  
+  // تنسيق الترويسة
+  for (const r of headerRowsRange) {
+    for (let c = 0; c < 14; c++) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      if (ws[ref]) {
+        ws[ref].s = {
+          font: { bold: true, sz: 11, color: { rgb: '1F2A37' } },
+          alignment: { horizontal: c < 7 ? 'right' : 'left', vertical: 'center', wrapText: true, readingOrder: c < 7 ? 2 : 1 },
+        };
       }
     }
   }
-  return XLSX.utils.aoa_to_sheet(rows);
+  
+  // العنوان
+  const titleRef = XLSX.utils.encode_cell({ r: titleRow, c: 0 });
+  if (ws[titleRef]) {
+    ws[titleRef].s = {
+      font: { bold: true, sz: 16, color: { rgb: '1F2A37' } },
+      alignment: { horizontal: 'center', vertical: 'center', readingOrder: 2 },
+      fill: { fgColor: { rgb: 'DDF0E5' } },
+    };
+  }
+  
+  // معلومات
+  for (let c = 0; c < totalCols; c++) {
+    const ref = XLSX.utils.encode_cell({ r: infoRow, c });
+    if (ws[ref]) {
+      ws[ref].s = {
+        font: { bold: true, sz: 11, color: { rgb: '1A5A38' } },
+        alignment: { horizontal: 'right', vertical: 'center', readingOrder: 2 },
+        fill: { fgColor: { rgb: 'FAF6E8' } },
+        border: { top: { style: 'thin', color: { rgb: 'D4C170' } }, bottom: { style: 'thin', color: { rgb: 'D4C170' } } },
+      };
+    }
+  }
+  
+  // ترويسة الجدول الرئيسية (الفترات)
+  for (let c = 0; c < totalCols; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 8, c });
+    if (ws[ref]) {
+      ws[ref].s = {
+        font: { bold: true, sz: 12, color: { rgb: '1A5A38' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true, readingOrder: 2 },
+        fill: { fgColor: { rgb: 'DDF0E5' } },
+        border: {
+          top: { style: 'medium', color: { rgb: '2D8659' } },
+          bottom: { style: 'medium', color: { rgb: '2D8659' } },
+          left: { style: 'thin', color: { rgb: '2D8659' } },
+          right: { style: 'thin', color: { rgb: '2D8659' } },
+        },
+      };
+    }
+  }
+  
+  // ترويسة فرعية (المقرر، الرمز، المعمل)
+  for (let c = 1; c < totalCols; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 9, c });
+    if (ws[ref]) {
+      ws[ref].s = {
+        font: { bold: true, sz: 10, color: { rgb: '5D4E2A' } },
+        alignment: { horizontal: 'center', vertical: 'center', readingOrder: 2 },
+        fill: { fgColor: { rgb: 'FAF6E8' } },
+        border: {
+          top: { style: 'thin', color: { rgb: 'D4C170' } },
+          bottom: { style: 'medium', color: { rgb: 'D4C170' } },
+          left: { style: 'thin', color: { rgb: 'BDC3C7' } },
+          right: { style: 'thin', color: { rgb: 'BDC3C7' } },
+        },
+      };
+    }
+  }
+  
+  // الصفوف بعد الترويسة - تنسيق الخلايا
+  const dataStartRow = 10;
+  const totalRows = rows.length;
+  for (let r = dataStartRow; r < totalRows; r++) {
+    // عمود اليوم
+    const dayRef = XLSX.utils.encode_cell({ r, c: 0 });
+    if (ws[dayRef]) {
+      ws[dayRef].s = {
+        font: { bold: true, sz: 11, color: { rgb: '1A5A38' } },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true, readingOrder: 2 },
+        fill: { fgColor: { rgb: 'F0F8F3' } },
+        border: {
+          top: { style: 'thin', color: { rgb: 'B5D6C3' } },
+          bottom: { style: 'thin', color: { rgb: 'B5D6C3' } },
+          left: { style: 'medium', color: { rgb: '2D8659' } },
+          right: { style: 'medium', color: { rgb: '2D8659' } },
+        },
+      };
+    }
+    
+    // الأعمدة الباقية
+    for (let p = 0; p < numPeriods; p++) {
+      const colCourse = 1 + p * 3;
+      const colCode = colCourse + 1;
+      const colRoom = colCourse + 2;
+      
+      // المقرر - أبيض
+      const courseRef = XLSX.utils.encode_cell({ r, c: colCourse });
+      if (ws[courseRef]) {
+        ws[courseRef].s = {
+          font: { sz: 10, color: { rgb: '1F2A37' }, bold: true },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true, readingOrder: 2 },
+          fill: { fgColor: { rgb: 'FFFFFF' } },
+          border: { top: { style: 'thin', color: { rgb: 'DEEBE3' } }, bottom: { style: 'thin', color: { rgb: 'DEEBE3' } }, left: { style: 'thin', color: { rgb: 'DEEBE3' } }, right: { style: 'thin', color: { rgb: 'DEEBE3' } } },
+        };
+      }
+      // الرمز - أخضر فاتح
+      const codeRef = XLSX.utils.encode_cell({ r, c: colCode });
+      if (ws[codeRef]) {
+        ws[codeRef].s = {
+          font: { sz: 10, color: { rgb: '2D8659' }, bold: true, name: 'Courier New' },
+          alignment: { horizontal: 'center', vertical: 'center', readingOrder: 1 },
+          fill: { fgColor: { rgb: 'F7FBF8' } },
+          border: { top: { style: 'thin', color: { rgb: 'DEEBE3' } }, bottom: { style: 'thin', color: { rgb: 'DEEBE3' } }, left: { style: 'thin', color: { rgb: 'DEEBE3' } }, right: { style: 'medium', color: { rgb: '2D8659' } } },
+        };
+      }
+      // المعمل - بيج فاتح
+      const roomRef = XLSX.utils.encode_cell({ r, c: colRoom });
+      if (ws[roomRef]) {
+        ws[roomRef].s = {
+          font: { sz: 9, color: { rgb: '5D4E2A' }, bold: true },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true, readingOrder: 2 },
+          fill: { fgColor: { rgb: 'FDFBF3' } },
+          border: { top: { style: 'thin', color: { rgb: 'DEEBE3' } }, bottom: { style: 'thin', color: { rgb: 'DEEBE3' } }, left: { style: 'thin', color: { rgb: 'DEEBE3' } }, right: { style: 'thin', color: { rgb: 'DEEBE3' } } },
+        };
+      }
+    }
+  }
+  
+  // اتجاه الصفحة من اليمين لليسار
+  ws['!sheetView'] = { rightToLeft: true };
+  
+  return ws;
 }
 
 function buildSupervisorsSheet() {
-  const periods = PERIOD_TIMES[CONFIG.numPeriods];
-  const rows = [['اليوم', 'الفترة', 'الوقت', 'المقرر', 'المعمل', 'المراقبة']];
+  const numPeriods = CURRENT_PERIODS.length;
+  const startDate = (document.getElementById('pdfStartDate')?.value || '').trim();
+  const college = (document.getElementById('pdfCollege')?.value || 'الكلية التقنية للبنات بالبدائع').trim();
+  const collegeEn = (document.getElementById('pdfCollegeEn')?.value || 'Albdayea Technical College for Girls').trim();
+  
+  // اجمع المراقبات: instructor → { day → [strings] }
+  const instructorDays = {};
+  const allInstructors = new Set();
+  
+  for (const [key, inst] of Object.entries(supervisors)) {
+    const [slotStr, labCode] = key.split('|');
+    const slot = parseInt(slotStr);
+    const day = Math.floor(slot / numPeriods);
+    const period = (slot % numPeriods) + 1;
+    
+    const lab = labs.find(l => l.code === labCode);
+    const roomNum = getRoomNumber(labCode, lab?.desc);
+    
+    if (!instructorDays[inst]) instructorDays[inst] = {};
+    if (!instructorDays[inst][day]) instructorDays[inst][day] = [];
+    instructorDays[inst][day].push(`الفترة ${period} - معمل ${roomNum}`);
+    allInstructors.add(inst);
+  }
+  
+  // الأيام التي فيها اختبارات
+  const daysWithExams = [];
   for (let d = 0; d < CONFIG.numDays; d++) {
-    for (let p = 0; p < CONFIG.numPeriods; p++) {
-      const slot = d * CONFIG.numPeriods + p;
-      const placedHere = Object.entries(placements).filter(([, s]) => s === slot)
-        .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
-      let labIdx = 0;
-      for (const c of placedHere) {
-        for (let li = 0; li < c.labsNeeded; li++) {
-          if (labIdx >= labs.length) break;
-          const lab = labs[labIdx++];
-          const key = `${slot}|${lab.code}`;
-          const roomNum = getRoomNumber(lab.code, lab.desc);
-          rows.push([
-            `يوم ${d+1}`, `الفترة ${p+1}`, periods[p],
-            `${c.code} - ${c.name}`,
-            `معمل ${roomNum}`,
-            supervisors[key] || ''
-          ]);
+    for (let p = 0; p < numPeriods; p++) {
+      const slot = d * numPeriods + p;
+      if (Object.keys(placements).some(c => placements[c] === slot)) {
+        daysWithExams.push(d);
+        break;
+      }
+    }
+  }
+  
+  const rows = [];
+  
+  // ----- الترويسة -----
+  rows.push(['المملكة العربية السعودية', '', '', '', '', '', '', '', '', '', 'KINGDOM OF SAUDI ARABIA']);
+  rows.push(['المؤسسة العامة للتدريب التقني والمهني', '', '', '', '', '', '', '', '', '', 'Technical and vocational Training corporation']);
+  rows.push([college, '', '', '', '', '', '', '', '', '', collegeEn]);
+  rows.push([]);
+  
+  rows.push(['', '', '', 'جدول المراقبين وفترات المراقبة - Invigilators Schedule']);
+  rows.push([]);
+  
+  // ----- ترويسة الجدول: المراقبة | الأيام -----
+  const headerRow = ['المراقبة'];
+  for (const d of daysWithExams) {
+    const di = getDayInfo(d, startDate);
+    headerRow.push(di.date ? `${di.name}\n${di.date}` : di.name);
+  }
+  rows.push(headerRow);
+  
+  // ----- البيانات: لكل مدربة -----
+  const sortedInstructors = [...allInstructors].sort();
+  for (const inst of sortedInstructors) {
+    const row = [inst];
+    for (const d of daysWithExams) {
+      const cells = instructorDays[inst]?.[d];
+      row.push(cells && cells.length > 0 ? cells.join('\n') : '-');
+    }
+    rows.push(row);
+  }
+  
+  if (sortedInstructors.length === 0) {
+    rows.push(['لم يتم إسناد أي مراقبات بعد']);
+  }
+  
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  
+  // عرض الأعمدة
+  const colWidths = [{ wch: 28 }]; // المراقبة
+  for (let i = 0; i < daysWithExams.length; i++) {
+    colWidths.push({ wch: 22 });
+  }
+  while (colWidths.length < 11) colWidths.push({ wch: 22 });
+  ws['!cols'] = colWidths;
+  
+  // ارتفاع الصفوف
+  ws['!rows'] = [
+    { hpt: 22 }, { hpt: 22 }, { hpt: 22 },
+    { hpt: 8 },
+    { hpt: 32 },
+    { hpt: 8 },
+    { hpt: 38 }, // ترويسة الجدول
+  ];
+  
+  const totalCols = 1 + daysWithExams.length;
+  const totalRows = rows.length;
+  
+  // دمج الخلايا
+  ws['!merges'] = ws['!merges'] || [];
+  ws['!merges'].push({ s: { r: 4, c: 0 }, e: { r: 4, c: totalCols - 1 } });
+  
+  // ----- التنسيق -----
+  // الترويسة العلوية
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 11; c++) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      if (ws[ref]) {
+        ws[ref].s = {
+          font: { bold: true, sz: 11, color: { rgb: '1F2A37' } },
+          alignment: { horizontal: c < 6 ? 'right' : 'left', vertical: 'center', wrapText: true, readingOrder: c < 6 ? 2 : 1 },
+        };
+      }
+    }
+  }
+  
+  // العنوان
+  const titleRef = XLSX.utils.encode_cell({ r: 4, c: 0 });
+  if (ws[titleRef]) {
+    ws[titleRef].s = {
+      font: { bold: true, sz: 16, color: { rgb: '1F2A37' } },
+      alignment: { horizontal: 'center', vertical: 'center', readingOrder: 2 },
+      fill: { fgColor: { rgb: 'DDF0E5' } },
+    };
+  }
+  
+  // ترويسة الجدول
+  for (let c = 0; c < totalCols; c++) {
+    const ref = XLSX.utils.encode_cell({ r: 6, c });
+    if (ws[ref]) {
+      ws[ref].s = {
+        font: { bold: true, sz: 11, color: c === 0 ? '5D4E2A' : '1A5A38' },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true, readingOrder: 2 },
+        fill: { fgColor: { rgb: c === 0 ? 'FAF6E8' : 'DDF0E5' } },
+        border: {
+          top: { style: 'medium', color: { rgb: c === 0 ? 'D4C170' : '2D8659' } },
+          bottom: { style: 'medium', color: { rgb: c === 0 ? 'D4C170' : '2D8659' } },
+          left: { style: 'thin', color: { rgb: 'BDC3C7' } },
+          right: { style: 'thin', color: { rgb: 'BDC3C7' } },
+        },
+      };
+    }
+  }
+  
+  // البيانات
+  for (let r = 7; r < totalRows; r++) {
+    for (let c = 0; c < totalCols; c++) {
+      const ref = XLSX.utils.encode_cell({ r, c });
+      if (ws[ref]) {
+        if (c === 0) {
+          // عمود اسم المراقبة
+          ws[ref].s = {
+            font: { bold: true, sz: 11, color: { rgb: '1F2A37' } },
+            alignment: { horizontal: 'right', vertical: 'center', wrapText: true, readingOrder: 2 },
+            fill: { fgColor: { rgb: r % 2 === 0 ? 'FAF6E8' : 'FDFBF3' } },
+            border: {
+              top: { style: 'thin', color: { rgb: 'DEEBE3' } },
+              bottom: { style: 'thin', color: { rgb: 'DEEBE3' } },
+              left: { style: 'medium', color: { rgb: 'D4C170' } },
+              right: { style: 'medium', color: { rgb: 'D4C170' } },
+            },
+          };
+        } else {
+          // الخلايا الباقية
+          ws[ref].s = {
+            font: { sz: 9, color: { rgb: '1F2A37' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true, readingOrder: 2 },
+            fill: { fgColor: { rgb: r % 2 === 0 ? 'F8FAF9' : 'FFFFFF' } },
+            border: {
+              top: { style: 'thin', color: { rgb: 'DEEBE3' } },
+              bottom: { style: 'thin', color: { rgb: 'DEEBE3' } },
+              left: { style: 'thin', color: { rgb: 'DEEBE3' } },
+              right: { style: 'thin', color: { rgb: 'DEEBE3' } },
+            },
+          };
         }
       }
     }
   }
-  return XLSX.utils.aoa_to_sheet(rows);
+  
+  ws['!sheetView'] = { rightToLeft: true };
+  
+  return ws;
 }
 
 function buildStudentsSheet() {
@@ -3120,20 +3831,37 @@ function exportFullExcel() {
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(cfg), 'الإعدادات');
   
-  XLSX.writeFile(wb, 'جدول_الاختبارات_الشامل.xlsx');
-  showNotification('success', '✓ تم التصدير', 'الملف الشامل');
+  try {
+    XLSX.writeFile(wb, 'جدول_الاختبارات_الشامل.xlsx');
+    showNotification('success', '✓ تم التصدير', 'الملف الشامل');
+  } catch (err) {
+    console.error('Excel export error:', err);
+    showNotification('error', 'خطأ في التصدير', err.message || 'فشل تصدير الملف');
+  }
 }
 
 function exportScheduleOnly() {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, buildScheduleSheet(), 'الجدول');
-  XLSX.writeFile(wb, 'جدول_الاختبارات.xlsx');
+  try {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, buildScheduleSheet(), 'الجدول');
+    XLSX.writeFile(wb, 'جدول_الاختبارات.xlsx');
+    showNotification('success', '✓ تم التصدير', 'الجدول');
+  } catch (err) {
+    console.error('Excel export error:', err);
+    showNotification('error', 'خطأ في التصدير', err.message || 'فشل تصدير الملف');
+  }
 }
 
 function exportSupervisorsOnly() {
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, buildSupervisorsSheet(), 'المراقبين');
-  XLSX.writeFile(wb, 'جدول_المراقبين.xlsx');
+  try {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, buildSupervisorsSheet(), 'المراقبين');
+    XLSX.writeFile(wb, 'جدول_المراقبين.xlsx');
+    showNotification('success', '✓ تم التصدير', 'المراقبين');
+  } catch (err) {
+    console.error('Excel export error:', err);
+    showNotification('error', 'خطأ في التصدير', err.message || 'فشل تصدير الملف');
+  }
 }
 
 // ============ PDF Export - بتنسيق رسمي مطابق للنموذج ============
@@ -3880,6 +4608,15 @@ window.applyInstructorExclusions = applyInstructorExclusions;
 window.addManualInstructor = addManualInstructor;
 window.removeManualInstructor = removeManualInstructor;
 window.renderManualInstructors = renderManualInstructors;
+window.renderInstructorLimits = renderInstructorLimits;
+window.saveInstructorLimit = saveInstructorLimit;
+window.applyBulkLimit = applyBulkLimit;
+window.clearAllLimits = clearAllLimits;
+window.renderInstructorDays = renderInstructorDays;
+window.toggleInstructorDay = toggleInstructorDay;
+window.toggleAllDaysForInstructor = toggleAllDaysForInstructor;
+window.selectAllDaysForAll = selectAllDaysForAll;
+window.clearAllDaysForAll = clearAllDaysForAll;
 window.openHijriCalendar = openHijriCalendar;
 window.hijriCalNav = hijriCalNav;
 window.hijriCalGoToYear = hijriCalGoToYear;

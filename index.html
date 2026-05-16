@@ -707,6 +707,24 @@ body {
 
   <!-- Tab 1: Setup -->
   <div class="tab-content active" id="tab-setup">
+    
+    <div class="setup-section" style="background:linear-gradient(135deg, #FAF6E8 0%, #FDFBF3 100%); border:1px dashed #D4C170;">
+      <h2 style="display:flex; align-items:center; gap:8px;">
+        <span>📂</span> هل لديكِ نسخة محفوظة من قبل؟
+      </h2>
+      <p class="section-description" style="margin-bottom:14px;">
+        لو حفظتي نسخة من المشروع سابقاً، ارفعيها هنا لاسترجاع كل العمل (الملفات، التوزيع، المراقبين، الإعدادات) مرة واحدة بدون إعادة كل شي.
+      </p>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn btn-primary" onclick="document.getElementById('restoreBackupFile2').click()" 
+                style="background:#2D8659;">
+          📂 رفع نسخة محفوظة (.json)
+        </button>
+        <input type="file" id="restoreBackupFile2" accept=".json" style="display:none" onchange="restoreProjectBackup(this.files[0])">
+        <span style="font-size:12px; color:#5D4E2A;">أو ابدئي مشروعاً جديداً برفع الملفات أدناه ⬇️</span>
+      </div>
+    </div>
+    
     <div class="setup-section">
       <h2>الخطوة 1: رفع الملفات</h2>
       <p class="section-description">ارفعي الملفات الثلاثة (المتدربين، المعامل، المقررات). الملف الأول إلزامي والباقي اختياري.</p>
@@ -797,6 +815,9 @@ body {
         <button class="btn btn-secondary" onclick="renderInstructorDays(); document.getElementById('instructorDaysModal').showModal()">
           📅 أيام المراقبة لكل مدرب
         </button>
+        <button class="btn btn-secondary" onclick="renderInstructorSpecialties(); document.getElementById('instructorSpecialtiesModal').showModal()">
+          🚫 استبعاد تخصصات للمدرب
+        </button>
         <button class="btn btn-secondary" onclick="renderSplitList(); document.getElementById('splitModal').showModal()">
           ✂️ تقسيم المقررات المشتركة
         </button>
@@ -880,6 +901,22 @@ body {
       <h2>تصدير الجدول</h2>
       <p class="section-description">اختاري ما تبغين تصديره وبأي صيغة</p>
       
+      <div style="margin-bottom:20px; background:linear-gradient(135deg, #DDF0E5 0%, #FAF6E8 100%); border:2px solid #2D8659; border-radius:14px; padding:16px;">
+        <h3 style="font-family:'Cairo'; font-size:16px; color:#1A5A38; margin-bottom:8px;">💾 حفظ نسخة المشروع</h3>
+        <p style="font-size:12px; color:#5D4E2A; margin-bottom:12px;">
+          احفظي نسخة كاملة من عملك (الملفات، التوزيع، المراقبين، الإعدادات) في ملف واحد. تقدرين ترفعينها لاحقاً في الإعدادات لاسترجاع كل العمل والتعديل عليه.
+        </p>
+        <div class="actions-row">
+          <button class="btn btn-primary" onclick="saveProjectBackup()" style="background:#2D8659;">
+            💾 حفظ نسخة كاملة
+          </button>
+          <button class="btn btn-secondary" onclick="document.getElementById('restoreBackupFile').click()" style="background:#FAF6E8; border:1px solid #D4C170;">
+            📂 رفع نسخة محفوظة
+          </button>
+          <input type="file" id="restoreBackupFile" accept=".json" style="display:none" onchange="restoreProjectBackup(this.files[0])">
+        </div>
+      </div>
+      
       <div style="margin-bottom:20px;">
         <h3 style="font-family:'Cairo'; font-size:15px; color:var(--primary); margin-bottom:10px;">📊 صيغة Excel</h3>
         <div class="actions-row">
@@ -940,6 +977,13 @@ body {
                 <option value="3">الأربعاء</option>
                 <option value="4">الخميس</option>
               </select>
+            </div>
+            <div class="config-item">
+              <label>رقم الأسبوع الأول</label>
+              <input type="number" id="pdfStartWeek" min="1" max="20" placeholder="مثلاً: 14" style="font-size:12px;">
+              <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">
+                💡 يظهر مع كل يوم في PDF (مثلاً: الأسبوع 14)
+              </div>
             </div>
           </div>
           
@@ -1113,23 +1157,51 @@ body {
   </div>
 </dialog>
 
-<dialog id="instructorLimitsModal" style="border:none; border-radius:14px; padding:0; max-width:600px; width:90%;">
+<dialog id="instructorSpecialtiesModal" style="border:none; border-radius:14px; padding:0; max-width:750px; width:95%;">
   <div style="padding:20px;">
-    <h2 style="font-family:'Cairo'; color:#2D8659; margin-bottom:8px;">🎯 تحديد سقف المراقبات</h2>
+    <h2 style="font-family:'Cairo'; color:#2D8659; margin-bottom:8px;">🚫 استبعاد تخصصات لكل مدرب</h2>
     <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
-      حددي العدد الأقصى من المراقبات لكل مدربة. اتركي الحقل فارغاً لعدم وضع سقف.
+      حددي التخصصات التي <strong>لا</strong> تريدين أن يراقب عليها كل مدرب (مثلاً: رئيس قسم لا يراقب على مقررات قسمه).
     </p>
     
-    <div style="display:flex; gap:8px; margin-bottom:12px; padding:10px; background:#F0F8F3; border-radius:8px; align-items:center;">
-      <span style="font-size:12px; color:#1A5A38; flex:1;">⚡ سقف موحد لكل المدربات (تطبيق سريع):</span>
-      <input type="number" id="bulkLimit" min="0" max="50" style="width:70px; padding:5px; border:1px solid #B5D6C3; border-radius:6px; font-size:13px;" placeholder="مثل: 5">
-      <button class="btn btn-primary" onclick="applyBulkLimit()" style="padding:5px 14px; background:#2D8659;">تطبيق على الكل</button>
+    <div id="instructorSpecialtiesList" style="max-height:450px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;"></div>
+    
+    <div style="display:flex; gap:10px; justify-content:space-between; margin-top:14px;">
+      <button class="btn btn-secondary" onclick="clearAllSpecialtyExclusions()" style="background:#FFE4E1; color:var(--danger);">🗑️ مسح كل القيود</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('instructorSpecialtiesModal').close()">إغلاق</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="instructorLimitsModal" style="border:none; border-radius:14px; padding:0; max-width:680px; width:95%;">
+  <div style="padding:20px;">
+    <h2 style="font-family:'Cairo'; color:#2D8659; margin-bottom:8px;">🎯 تحديد عدد المراقبات لكل مدربة</h2>
+    <p style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">
+      حددي عدد المراقبات لكل مدربة. اختاري نوع القيد: <strong>"فأقل"</strong> = سقف أعلى، <strong>"فأعلى"</strong> = حد أدنى.
+    </p>
+    
+    <div style="background:#F0F8F3; padding:12px; border-radius:8px; margin-bottom:12px; font-size:11px; line-height:1.7;">
+      💡 <strong>أمثلة:</strong><br>
+      • ندى = <span style="background:#FFE4E1; padding:1px 6px; border-radius:4px;">5 فأقل</span> → التطبيق لا يعطيها أكثر من 5 مراقبات<br>
+      • لمياء = <span style="background:#DDF0E5; padding:1px 6px; border-radius:4px;">15 فأعلى</span> → التطبيق يحاول إعطاءها 15 على الأقل<br>
+      • سارة = <span style="background:#FAF6E8; padding:1px 6px; border-radius:4px;">10 يساوي</span> → التطبيق يعطيها 10 بالضبط (لا أكثر ولا أقل)
+    </div>
+    
+    <div style="display:flex; gap:8px; margin-bottom:12px; padding:10px; background:#F0F8F3; border-radius:8px; align-items:center; flex-wrap:wrap;">
+      <span style="font-size:12px; color:#1A5A38; flex:1; font-weight:700;">⚡ تطبيق سريع للكل:</span>
+      <input type="number" id="bulkLimit" min="0" max="50" style="width:60px; padding:5px; border:1px solid #B5D6C3; border-radius:6px; font-size:13px;" placeholder="عدد">
+      <select id="bulkLimitType" style="padding:5px; border:1px solid #B5D6C3; border-radius:6px; font-size:13px;">
+        <option value="max">فأقل (سقف)</option>
+        <option value="min">فأعلى (حد أدنى)</option>
+        <option value="exact">يساوي (بالضبط)</option>
+      </select>
+      <button class="btn btn-primary" onclick="applyBulkLimit()" style="padding:5px 14px; background:#2D8659;">تطبيق</button>
     </div>
     
     <div id="instructorLimitsList" style="max-height:400px; overflow-y:auto; border:1px solid var(--border); border-radius:8px; padding:8px;"></div>
     
     <div style="display:flex; gap:10px; justify-content:space-between; margin-top:14px;">
-      <button class="btn btn-secondary" onclick="clearAllLimits()" style="background:#FFE4E1; color:var(--danger);">🗑️ مسح كل السقوف</button>
+      <button class="btn btn-secondary" onclick="clearAllLimits()" style="background:#FFE4E1; color:var(--danger);">🗑️ مسح كل القيود</button>
       <div style="display:flex; gap:10px;">
         <button class="btn btn-secondary" onclick="document.getElementById('instructorLimitsModal').close()">إغلاق</button>
       </div>
@@ -1143,8 +1215,9 @@ let courses = [];
 let students = {};
 let instructors = [];
 let manualInstructors = []; // المدربين المضافين يدوياً (غير الموجودين في CSV)
-let instructorLimits = {}; // سقف المراقبات لكل مدربة { اسم: عدد }
+let instructorLimits = {}; // سقف المراقبات لكل مدربة { اسم: { type: 'max'|'min', value: عدد } }
 let instructorAvailableDays = {}; // أيام المراقبة لكل مدربة { اسم: [0,2,4] = الأحد والثلاثاء والخميس }
+let instructorExcludedSpecialties = {}; // التخصصات اللي لا تراقب عليها كل مدربة { اسم: ['السلامة'] }
 let labs = [];
 let placements = {};       // courseCode -> slotIdx
 let supervisors = {};      // `${slotIdx}|${labCode}` -> instructorName
@@ -1824,44 +1897,93 @@ function renderInstructorLimits() {
     const isExcluded = excludedInstructors.has(name);
     const safeName = name.replace(/'/g, "\\'");
     
+    // قيمة ونوع القيد
+    const limitValue = limit !== undefined ? (typeof limit === 'object' ? limit.value : limit) : '';
+    const limitType = limit !== undefined ? (typeof limit === 'object' ? limit.type : 'max') : 'max';
+    
+    // لون الحالة حسب القيد
+    let statusColor = 'var(--text-muted)';
+    let statusText = `حالياً: ${current}`;
+    if (limit !== undefined) {
+      if (limitType === 'max') {
+        statusColor = current > limitValue ? '#C0392B' : (current === limitValue ? '#D4A53A' : '#2D8659');
+        statusText = `${current}/${limitValue} ${current > limitValue ? '(تجاوز!)' : ''}`;
+      } else if (limitType === 'min') {
+        statusColor = current < limitValue ? '#D4A53A' : '#2D8659';
+        statusText = `${current}/${limitValue} ${current < limitValue ? '(تحتاج المزيد)' : '(تم)'}`;
+      } else { // exact
+        statusColor = current === limitValue ? '#2D8659' : '#D4A53A';
+        statusText = `${current}/${limitValue} ${current === limitValue ? '(تم)' : current < limitValue ? '(ناقص)' : '(زائد)'}`;
+      }
+    }
+    
+    // ألوان نوع القيد
+    let bgColor, textColor;
+    if (limitType === 'max') {
+      bgColor = '#FFE4E1'; textColor = '#C0392B';
+    } else if (limitType === 'min') {
+      bgColor = '#DDF0E5'; textColor = '#1A5A38';
+    } else { // exact
+      bgColor = '#FAF6E8'; textColor = '#5D4E2A';
+    }
+    
     return `
-      <div style="display:flex; align-items:center; gap:10px; padding:10px; border-bottom:1px solid var(--border); ${isExcluded ? 'opacity:0.5;' : ''}">
+      <div style="display:flex; align-items:center; gap:8px; padding:10px; border-bottom:1px solid var(--border); ${isExcluded ? 'opacity:0.5;' : ''}">
         <span style="flex:1; font-size:13px;">👤 ${name}${isExcluded ? ' <span style="color:var(--danger); font-size:11px;">(مستبعدة)</span>' : ''}</span>
-        <span style="font-size:11px; color:var(--text-muted);">حالياً: ${current}</span>
-        <input type="number" min="0" max="50" value="${limit !== undefined ? limit : ''}" 
-               placeholder="بلا سقف"
-               onchange="saveInstructorLimit('${safeName}', this.value)"
-               style="width:80px; padding:6px; border:1px solid #B5D6C3; border-radius:6px; font-size:13px; text-align:center;">
+        <span style="font-size:11px; color:${statusColor}; font-weight:700;">${statusText}</span>
+        <input type="number" min="0" max="50" value="${limitValue}" 
+               placeholder="بلا قيد"
+               onchange="saveInstructorLimit('${safeName}', this.value, document.getElementById('limType-${safeName.replace(/[^a-zA-Z0-9]/g, '_')}').value)"
+               style="width:60px; padding:6px; border:1px solid #B5D6C3; border-radius:6px; font-size:13px; text-align:center;">
+        <select id="limType-${safeName.replace(/[^a-zA-Z0-9]/g, '_')}" 
+                onchange="saveInstructorLimit('${safeName}', this.previousElementSibling.value, this.value)"
+                style="padding:6px; border:1px solid #B5D6C3; border-radius:6px; font-size:12px; cursor:pointer;
+                       background:${bgColor};
+                       color:${textColor}; font-weight:700;">
+          <option value="max" ${limitType === 'max' ? 'selected' : ''}>فأقل</option>
+          <option value="min" ${limitType === 'min' ? 'selected' : ''}>فأعلى</option>
+          <option value="exact" ${limitType === 'exact' ? 'selected' : ''}>يساوي</option>
+        </select>
       </div>
     `;
   }).join('');
 }
 
-function saveInstructorLimit(name, value) {
+function saveInstructorLimit(name, value, type) {
   const v = parseInt(value);
-  if (isNaN(v) || value === '') {
+  if (isNaN(v) || value === '' || v < 0) {
     delete instructorLimits[name];
-  } else if (v >= 0) {
-    instructorLimits[name] = v;
+  } else {
+    instructorLimits[name] = { type: type || 'max', value: v };
   }
 }
 
 function applyBulkLimit() {
   const v = parseInt(document.getElementById('bulkLimit').value);
+  const type = document.getElementById('bulkLimitType').value;
   if (isNaN(v) || v < 0) {
     showNotification('warning', 'قيمة غير صحيحة', 'أدخلي رقماً صحيحاً');
     return;
   }
-  instructors.forEach(name => { instructorLimits[name] = v; });
+  instructors.forEach(name => { instructorLimits[name] = { type, value: v }; });
   renderInstructorLimits();
-  showNotification('success', '✓ تم التطبيق', `سقف ${v} مراقبة لكل المدربات`);
+  const typeText = type === 'max' ? 'فأقل' : type === 'min' ? 'فأعلى' : 'يساوي';
+  showNotification('success', '✓ تم التطبيق', `${v} ${typeText} لكل المدربات`);
 }
 
 function clearAllLimits() {
-  if (!confirm('مسح كل السقوف؟')) return;
+  if (!confirm('مسح كل القيود؟')) return;
   instructorLimits = {};
   renderInstructorLimits();
-  showNotification('success', 'تم المسح', 'تم إلغاء كل السقوف');
+  showNotification('success', 'تم المسح', 'تم إلغاء كل القيود');
+}
+
+// قراءة قيد المدربة (تدعم الصيغة القديمة رقم فقط، والجديدة كائن)
+function getInstructorLimit(name) {
+  const lim = instructorLimits[name];
+  if (lim === undefined || lim === null) return null;
+  if (typeof lim === 'number') return { type: 'max', value: lim }; // الصيغة القديمة
+  return lim; // { type: 'max'|'min', value: عدد }
 }
 
 // ============ أيام المراقبة لكل مدربة ============
@@ -1982,6 +2104,115 @@ function isInstructorAvailableOnDay(name, dayIdx) {
   const days = instructorAvailableDays[name];
   if (!days || days.length === 0) return true; // متاحة كل الأيام
   return days.includes(dayIdx);
+}
+
+// ============ استبعاد التخصصات لكل مدرب ============
+function renderInstructorSpecialties() {
+  const list = document.getElementById('instructorSpecialtiesList');
+  if (!list) return;
+  
+  if (instructors.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">
+      لا يوجد مدربين بعد. ارفعي ملف المتدربين أولاً
+    </div>`;
+    return;
+  }
+  
+  // اجمع كل التخصصات
+  const allSpecialties = new Set();
+  courses.forEach(c => (c.specialtiesList || []).forEach(sp => allSpecialties.add(sp)));
+  const specialties = [...allSpecialties].sort();
+  
+  if (specialties.length === 0) {
+    list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:13px;">
+      لا توجد تخصصات في البيانات
+    </div>`;
+    return;
+  }
+  
+  let html = '';
+  instructors.forEach(name => {
+    const isExcluded = excludedInstructors.has(name);
+    const safeName = name.replace(/'/g, "\\'");
+    const excludedSpecs = instructorExcludedSpecialties[name] || [];
+    
+    html += `
+      <div style="padding:10px 12px; border-bottom:1px solid var(--border); ${isExcluded ? 'opacity:0.5;' : ''}">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <span style="flex:1; font-size:13px; font-weight:700;">👤 ${name}${isExcluded ? ' <span style="color:var(--danger); font-size:11px;">(مستبعدة)</span>' : ''}</span>
+          <span style="font-size:11px; color:${excludedSpecs.length > 0 ? '#C0392B' : '#5D6D7E'};">
+            ${excludedSpecs.length > 0 ? `🚫 ${excludedSpecs.length} تخصص مستبعد` : '✓ تراقب كل التخصصات'}
+          </span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; padding-right:24px;">
+          ${specialties.map(spec => {
+            const isSpecExcluded = excludedSpecs.includes(spec);
+            const col = (typeof getSpecColor === 'function') ? getSpecColor(spec) : { border: '#888', bg: '#f0f0f0' };
+            const safeSpec = spec.replace(/'/g, "\\'");
+            return `
+              <label style="display:inline-flex; align-items:center; gap:4px; padding:5px 10px; 
+                            background:${isSpecExcluded ? '#FFE4E1' : col.bg}; 
+                            border:1.5px solid ${isSpecExcluded ? '#C0392B' : col.border}; 
+                            border-radius:6px; cursor:pointer; font-size:11px; 
+                            font-weight:${isSpecExcluded ? '900' : '700'};
+                            color:${isSpecExcluded ? '#C0392B' : col.border};
+                            text-decoration:${isSpecExcluded ? 'line-through' : 'none'};">
+                <input type="checkbox" ${isSpecExcluded ? 'checked' : ''} 
+                       onchange="toggleInstructorSpecialty('${safeName}', '${safeSpec}', this.checked)"
+                       style="cursor:pointer;">
+                ${isSpecExcluded ? '🚫 ' : ''}${spec}
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  });
+  
+  list.innerHTML = html;
+}
+
+function toggleInstructorSpecialty(name, spec, isChecked) {
+  if (!instructorExcludedSpecialties[name]) {
+    instructorExcludedSpecialties[name] = [];
+  }
+  
+  if (isChecked) {
+    // أضيفي للاستبعاد
+    if (!instructorExcludedSpecialties[name].includes(spec)) {
+      instructorExcludedSpecialties[name].push(spec);
+    }
+  } else {
+    // شيلي من الاستبعاد
+    instructorExcludedSpecialties[name] = instructorExcludedSpecialties[name].filter(s => s !== spec);
+  }
+  
+  // لو ما فيه أي استبعاد، احذفي المفتاح
+  if (instructorExcludedSpecialties[name].length === 0) {
+    delete instructorExcludedSpecialties[name];
+  }
+  
+  renderInstructorSpecialties();
+}
+
+function clearAllSpecialtyExclusions() {
+  if (!confirm('مسح كل قيود التخصصات؟')) return;
+  instructorExcludedSpecialties = {};
+  renderInstructorSpecialties();
+  showNotification('success', 'تم المسح', 'تم إلغاء كل قيود التخصصات');
+}
+
+// فحص: هل المدربة تقدر تراقب على هذا المقرر؟
+function canInstructorSuperviseCourse(name, course) {
+  const excludedSpecs = instructorExcludedSpecialties[name];
+  if (!excludedSpecs || excludedSpecs.length === 0) return true;
+  
+  // لو أي تخصص من تخصصات المقرر مستبعد للمدربة → لا تقدر تراقب
+  const courseSpecs = course.specialtiesList || [];
+  for (const spec of courseSpecs) {
+    if (excludedSpecs.includes(spec)) return false;
+  }
+  return true;
 }
 
 // ============ التقويم الهجري ============
@@ -2227,6 +2458,10 @@ function updateStartDayPreview() {
 
 // ============ Init ============
 function initializeApp() {
+  const oldNumDays = CONFIG.numDays;
+  const oldNumPeriods = CONFIG.numPeriods;
+  const oldLabCapacity = CONFIG.labCapacity;
+  
   CONFIG.numDays = parseInt(document.getElementById('numDays').value);
   CONFIG.numPeriods = parseInt(document.getElementById('numPeriods').value);
   CONFIG.numLabs = parseInt(document.getElementById('numLabs').value);
@@ -2244,6 +2479,29 @@ function initializeApp() {
     }));
   }
 
+  // التحقق من توافق التوزيع الحالي مع الإعدادات الجديدة
+  const totalSlots = CONFIG.numDays * CONFIG.numPeriods;
+  const hasExistingData = Object.keys(placements).length > 0 || Object.keys(supervisors).length > 0;
+  const settingsChanged = (oldNumDays !== CONFIG.numDays) || 
+                          (oldNumPeriods !== CONFIG.numPeriods) ||
+                          (oldLabCapacity !== CONFIG.labCapacity);
+  
+  // نحافظ على كل البيانات بدون حذف أبداً
+  // لو فيه توزيع خارج النطاق، نحذره فقط بدون مسحه
+  if (hasExistingData && settingsChanged) {
+    let outOfRangeCount = 0;
+    Object.values(placements).forEach(slot => {
+      if (slot >= totalSlots) outOfRangeCount++;
+    });
+    
+    if (outOfRangeCount > 0) {
+      showNotification('warning', '⚠ تنبيه', 
+        `${outOfRangeCount} مقرر خارج النطاق المرئي. زيدي الأيام أو الفترات لرؤيتها مرة ثانية.`);
+    } else {
+      showNotification('success', '✓ تم تطبيق الإعدادات', 'كل البيانات محفوظة');
+    }
+  }
+
   // فك قفل التابات
   ['schedule', 'supervisors', 'export'].forEach(t => {
     const btn = document.getElementById(`tabBtn-${t}`);
@@ -2253,10 +2511,16 @@ function initializeApp() {
     }
   });
 
+  // إعادة بناء كل شي
   switchTab('schedule');
   renderScheduleGrid();
   renderCoursePool();
+  if (typeof buildDynamicFilters === 'function') buildDynamicFilters();
+  renderSupervisorTables();
+  if (typeof renderInstructorPool === 'function') renderInstructorPool();
+  detectConflicts();
   updateStats();
+  if (typeof updateExportStats === 'function') updateExportStats();
 }
 
 // ============ Tabs ============
@@ -3186,14 +3450,16 @@ function assignSupervisor(key, slotIdx, instructor) {
     }
   }
   
-  // افحص: هل تجاوزت سقف المراقبات؟
-  const limit = instructorLimits[instructor];
-  if (limit !== undefined) {
+  // افحص: هل تجاوزت قيد المراقبات؟
+  const lim = getInstructorLimit(instructor);
+  if (lim) {
     const currentCount = Object.entries(supervisors)
       .filter(([k, v]) => v === instructor && k !== key)
       .length;
-    if (currentCount >= limit) {
-      if (!confirm(`⚠️ ${instructor} وصلت للسقف المحدد (${limit} مراقبة).\n\nهل تريدين تجاوز السقف وإسنادها؟`)) {
+    // 'max' و 'exact' كلاهما لهما حد أقصى
+    if ((lim.type === 'max' || lim.type === 'exact') && currentCount >= lim.value) {
+      const typeText = lim.type === 'max' ? 'الحد الأقصى' : 'العدد المطلوب بالضبط';
+      if (!confirm(`⚠️ ${instructor} وصلت ${typeText} (${lim.value} مراقبة).\n\nهل تريدين تجاوز الحد وإسنادها؟`)) {
         return;
       }
     }
@@ -3204,6 +3470,25 @@ function assignSupervisor(key, slotIdx, instructor) {
   if (!isInstructorAvailableOnDay(instructor, day)) {
     if (!confirm(`⚠️ ${instructor} غير متاحة في اليوم ${day + 1}.\n\nهل تريدين إسنادها رغم ذلك؟`)) {
       return;
+    }
+  }
+  
+  // افحص: هل المدربة لا تراقب على تخصص هذا المقرر؟
+  // نحتاج نعرف وش المقرر اللي في هذي الخانة
+  const labCode = key.split('|')[1];
+  // نحدد أي مقرر يستخدم هذا المعمل في هذي الفترة
+  const placedHere = Object.entries(placements).filter(([, s]) => s === slotIdx)
+    .map(([code]) => courses.find(c => c.code === code)).filter(Boolean);
+  
+  for (const c of placedHere) {
+    if (!canInstructorSuperviseCourse(instructor, c)) {
+      const excluded = (instructorExcludedSpecialties[instructor] || [])
+        .filter(spec => (c.specialtiesList || []).includes(spec))
+        .join('، ');
+      if (!confirm(`⚠️ ${instructor} لا تراقب على تخصص: ${excluded}\nالمقرر "${c.name}" ينتمي لهذا التخصص.\n\nهل تريدين إسنادها رغم ذلك؟`)) {
+        return;
+      }
+      break; // كفاية تنبيه واحد
     }
   }
   
@@ -3247,25 +3532,47 @@ function autoAssignSupervisors() {
     const busy = new Set();
     placedHere.forEach(c => c.sections.forEach(s => { if (s.instructor) busy.add(s.instructor); }));
     
-    // المتاحات: غير مشغولات + لم تتجاوزن السقف + متاحات في هذا اليوم
+    // المتاحات: غير مشغولات + لم يتجاوزن الحد الأقصى + متاحات في هذا اليوم
+    // الأولوية: من لديها قيد "min" أو "exact" لم يتحقق بعد
     const free = available
       .filter(i => !busy.has(i))
       .filter(i => {
-        const limit = instructorLimits[i];
-        return limit === undefined || counts[i] < limit;
+        const lim = getInstructorLimit(i);
+        if (!lim) return true;
+        // إذا 'max' أو 'exact' ووصلنا للحد، استبعد
+        if ((lim.type === 'max' || lim.type === 'exact') && counts[i] >= lim.value) return false;
+        return true;
       })
       .filter(i => isInstructorAvailableOnDay(i, day))
-      .sort((a, b) => counts[a] - counts[b]);
+      .sort((a, b) => {
+        const limA = getInstructorLimit(a);
+        const limB = getInstructorLimit(b);
+        // الأولوية: من تحتاج المزيد (min أو exact ولم تصل للحد)
+        const needsMoreA = limA && (limA.type === 'min' || limA.type === 'exact') && counts[a] < limA.value ? 1 : 0;
+        const needsMoreB = limB && (limB.type === 'min' || limB.type === 'exact') && counts[b] < limB.value ? 1 : 0;
+        if (needsMoreA !== needsMoreB) return needsMoreB - needsMoreA;
+        return counts[a] - counts[b];
+      });
     
-    let labIdx = 0, freeIdx = 0;
+    let labIdx = 0;
     for (const c of placedHere) {
+      // المدربات اللي يقدرن يراقبن على مقررات هذا المقرر
+      const freeForCourse = free.filter(i => canInstructorSuperviseCourse(i, c));
+      let freeIdx = 0;
       for (let li = 0; li < c.labsNeeded; li++) {
         if (labIdx >= labs.length) break;
         const lab = labs[labIdx++];
         const key = `${slot}|${lab.code}`;
-        if (freeIdx < free.length) {
-          supervisors[key] = free[freeIdx];
-          counts[free[freeIdx]]++;
+        // ابحث عن مدربة من الـ freeForCourse لم تُستخدم بعد في هذي الفترة
+        while (freeIdx < freeForCourse.length && 
+               Object.entries(supervisors).some(([k, v]) => 
+                 k.startsWith(slot + '|') && v === freeForCourse[freeIdx])) {
+          freeIdx++;
+        }
+        if (freeIdx < freeForCourse.length) {
+          const inst = freeForCourse[freeIdx];
+          supervisors[key] = inst;
+          counts[inst]++;
           freeIdx++;
         } else {
           unfilledSlots++;
@@ -3308,6 +3615,240 @@ function showNotification(type, title, desc) {
 }
 
 // ============ Export ============
+
+// ============ Project Backup & Restore ============
+function saveProjectBackup() {
+  // تحضير courses: تحويل Set إلى Array
+  const coursesForSave = courses.map(c => ({
+    ...c,
+    sections: (c.sections || []).map(s => ({
+      ...s,
+      students: s.students instanceof Set ? [...s.students] : (s.students || []),
+    })),
+  }));
+  
+  // اجمع كل حالة المشروع في كائن واحد
+  const backup = {
+    version: '1.0',
+    savedAt: new Date().toISOString(),
+    metadata: {
+      college: document.getElementById('pdfCollege')?.value || '',
+      collegeEn: document.getElementById('pdfCollegeEn')?.value || '',
+      dept: document.getElementById('pdfDept')?.value || '',
+      major: document.getElementById('pdfMajor')?.value || '',
+      term: document.getElementById('pdfTerm')?.value || '',
+      startDate: document.getElementById('pdfStartDate')?.value || '',
+      startDay: document.getElementById('pdfStartDay')?.value || '0',
+      startWeek: document.getElementById('pdfStartWeek')?.value || '',
+    },
+    config: {
+      numDays: CONFIG.numDays,
+      numPeriods: CONFIG.numPeriods,
+      numLabs: CONFIG.numLabs,
+      labCapacity: CONFIG.labCapacity,
+    },
+    periods: CURRENT_PERIODS,
+    data: {
+      courses: coursesForSave,
+      students,
+      instructors,
+      manualInstructors,
+      instructorLimits,
+      instructorAvailableDays,
+      instructorExcludedSpecialties,
+      labs,
+      placements,
+      supervisors,
+      excludedCourses: [...excludedCourses],
+      excludedInstructors: [...excludedInstructors],
+      splitCourses: [...splitCourses],
+    },
+    logos: window._pdfLogos || {},
+  };
+  
+  try {
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10);
+    const fileName = `نسخة_منظم_الجدول_${date}.json`;
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('success', '✓ تم حفظ النسخة', `ملف: ${fileName}`);
+  } catch (err) {
+    console.error('Backup error:', err);
+    showNotification('error', 'خطأ في الحفظ', err.message);
+  }
+}
+
+function restoreProjectBackup(file) {
+  if (!file) return;
+  
+  const confirmMsg = 'سيتم استبدال البيانات الحالية بالنسخة المحفوظة. هل تريدين المتابعة؟';
+  if ((courses.length > 0 || Object.keys(placements).length > 0) && !confirm(confirmMsg)) {
+    document.getElementById('restoreBackupFile').value = '';
+    document.getElementById('restoreBackupFile2').value = '';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      
+      if (!backup.data || !backup.config) {
+        showNotification('error', 'ملف غير صالح', 'الملف لا يحتوي على بيانات نسخة احتياطية صحيحة');
+        return;
+      }
+      
+      // استرجع البيانات
+      courses = backup.data.courses || [];
+      
+      // مهم: students في كل section لازم تتحول من Array لـ Set
+      // (تتحول لـ Array لما تتحفظ في JSON)
+      courses.forEach(c => {
+        if (c.sections && Array.isArray(c.sections)) {
+          c.sections.forEach(s => {
+            if (s.students && !(s.students instanceof Set)) {
+              s.students = new Set(Array.isArray(s.students) ? s.students : []);
+            }
+          });
+        }
+        // specialtiesList تبقى Array (هذا صحيح)
+      });
+      
+      students = backup.data.students || {};
+      instructors = backup.data.instructors || [];
+      manualInstructors = backup.data.manualInstructors || [];
+      instructorLimits = backup.data.instructorLimits || {};
+      instructorAvailableDays = backup.data.instructorAvailableDays || {};
+      instructorExcludedSpecialties = backup.data.instructorExcludedSpecialties || {};
+      labs = backup.data.labs || [];
+      placements = backup.data.placements || {};
+      supervisors = backup.data.supervisors || {};
+      excludedCourses = new Set(backup.data.excludedCourses || []);
+      excludedInstructors = new Set(backup.data.excludedInstructors || []);
+      splitCourses = new Set(backup.data.splitCourses || []);
+      
+      // استرجع الإعدادات
+      CONFIG.numDays = backup.config.numDays || 5;
+      CONFIG.numPeriods = backup.config.numPeriods || 3;
+      CONFIG.numLabs = backup.config.numLabs || 5;
+      CONFIG.labCapacity = backup.config.labCapacity || 25;
+      
+      // استرجع الفترات
+      if (backup.periods) {
+        CURRENT_PERIODS = backup.periods;
+      }
+      
+      // استرجع البيانات الوصفية
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && val !== undefined) el.value = val;
+      };
+      if (backup.metadata) {
+        setVal('pdfCollege', backup.metadata.college);
+        setVal('pdfCollegeEn', backup.metadata.collegeEn);
+        setVal('pdfDept', backup.metadata.dept);
+        setVal('pdfMajor', backup.metadata.major);
+        setVal('pdfTerm', backup.metadata.term);
+        setVal('pdfStartDate', backup.metadata.startDate);
+        setVal('pdfStartDay', backup.metadata.startDay);
+        setVal('pdfStartWeek', backup.metadata.startWeek);
+      }
+      
+      setVal('numDays', CONFIG.numDays);
+      setVal('numPeriods', CONFIG.numPeriods);
+      setVal('numLabs', CONFIG.numLabs);
+      setVal('labCapacity', CONFIG.labCapacity);
+      
+      // استرجع الشعارات
+      if (backup.logos) {
+        window._pdfLogos = backup.logos;
+        if (backup.logos.college) {
+          const prev = document.getElementById('collegeLogoPreview');
+          if (prev) {
+            prev.innerHTML = `<img src="${backup.logos.college}" style="max-height:50px; max-width:100px; border:1px solid #ddd; padding:4px; background:white;">`;
+          }
+        }
+      }
+      
+      // أظهر الكتلة الثانية للإعدادات
+      document.getElementById('configBlock').classList.remove('hidden');
+      
+      // أعد رسم كل شي
+      renderUploadStatus();
+      renderFilesSummary();
+      if (typeof buildDynamicFilters === 'function') buildDynamicFilters();
+      if (typeof renderPeriodTimes === 'function') renderPeriodTimes();
+      
+      // فتح التابات
+      unlockTabs();
+      
+      // أعد رسم الجدول والمراقبين
+      if (typeof renderScheduleGrid === 'function') renderScheduleGrid();
+      if (typeof renderCoursePool === 'function') renderCoursePool();
+      if (typeof renderInstructorPool === 'function') renderInstructorPool();
+      if (typeof renderSupervisorTables === 'function') renderSupervisorTables();
+      if (typeof detectConflicts === 'function') detectConflicts();
+      if (typeof updateStats === 'function') updateStats();
+      if (typeof updateExportStats === 'function') updateExportStats();
+      
+      const savedDate = backup.savedAt ? new Date(backup.savedAt).toLocaleDateString('ar-SA') : '';
+      showNotification('success', '✓ تم استرجاع النسخة', savedDate ? `محفوظة في ${savedDate}` : 'تم تحميل البيانات');
+      
+      // مسح الـ input عشان نقدر نرفع نفس الملف مرة ثانية
+      document.getElementById('restoreBackupFile').value = '';
+      if (document.getElementById('restoreBackupFile2')) {
+        document.getElementById('restoreBackupFile2').value = '';
+      }
+    } catch (err) {
+      console.error('Restore error:', err);
+      showNotification('error', 'خطأ في الاسترجاع', err.message || 'الملف غير صالح');
+    }
+  };
+  reader.onerror = () => {
+    showNotification('error', 'خطأ في القراءة', 'لم يتمكن من قراءة الملف');
+  };
+  reader.readAsText(file);
+}
+
+function unlockTabs() {
+  document.querySelectorAll('.tab.locked').forEach(t => t.classList.remove('locked'));
+}
+
+function renderUploadStatus() {
+  // إذا كان فيه بيانات، نظهر علامة ✓ على الـ upload zones
+  if (Object.keys(students).length > 0) {
+    const el = document.getElementById('uploadStudents');
+    if (el) {
+      el.classList.add('uploaded');
+      const p = el.querySelector('p');
+      if (p && !p.textContent.startsWith('✓')) p.textContent = '✓ ' + p.textContent;
+    }
+  }
+  if (labs.length > 0) {
+    const el = document.getElementById('uploadLabs');
+    if (el) {
+      el.classList.add('uploaded');
+      const p = el.querySelector('p');
+      if (p && !p.textContent.startsWith('✓')) p.textContent = '✓ ' + p.textContent;
+    }
+  }
+}
+
+function renderFilesSummary() {
+  // إذا فيه دالة موجودة، استدعيها
+  if (typeof showFilesSummary === 'function') showFilesSummary();
+}
+
+
 function updateExportStats() {
   const placed = Object.keys(placements).length;
   const total = courses.filter(c => !excludedCourses.has(c.code)).length;
@@ -3893,6 +4434,19 @@ function toArabicHinduDigits(str) {
   return String(str).replace(/\d/g, d => arabic[parseInt(d)]);
 }
 
+// تحويل رقم لكلمة ترتيبية مؤنثة (الأولى، الثانية، ...)
+function toOrdinalArabicWord(n) {
+  const ordinals = {
+    1: 'الأولى', 2: 'الثانية', 3: 'الثالثة', 4: 'الرابعة', 5: 'الخامسة',
+    6: 'السادسة', 7: 'السابعة', 8: 'الثامنة', 9: 'التاسعة', 10: 'العاشرة',
+    11: 'الحادية عشرة', 12: 'الثانية عشرة', 13: 'الثالثة عشرة',
+    14: 'الرابعة عشرة', 15: 'الخامسة عشرة', 16: 'السادسة عشرة',
+    17: 'السابعة عشرة', 18: 'الثامنة عشرة', 19: 'التاسعة عشرة',
+    20: 'العشرون'
+  };
+  return ordinals[n] || `${toArabicHinduDigits(n)}`;
+}
+
 // زيادة تاريخ هجري: نفترض الشهر 30 يوم
 function addHijriDays(dateStr, days) {
   if (!dateStr) return '';
@@ -4222,6 +4776,63 @@ async function exportPDFHTML(htmlContent, filename, orientation = 'landscape') {
     border-radius: 3px;
     display: inline-block;
   }
+  table.main-table td.day-cell .week-num {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #2D8659;
+    background: #DDF0E5;
+    padding: 3px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    border: 1px solid #B5D6C3;
+  }
+  /* عمود الأسبوع - تصميم احترافي مع شعار جانبي */
+  table.main-table th.week-col-header {
+    background: linear-gradient(135deg, #2D8659 0%, #1A5A38 100%);
+    color: white;
+    font-weight: 700;
+    font-size: 11px;
+    width: 55px;
+    border-bottom: 3px solid #D4C170;
+    letter-spacing: 1px;
+    padding: 8px 4px;
+  }
+  table.main-table td.week-col {
+    background: linear-gradient(180deg, #FAF6E8 0%, #FDFBF3 100%);
+    border-right: 3px solid #D4C170;
+    border-left: 3px solid #D4C170;
+    border-top: 1.5px solid #D4C170;
+    border-bottom: 1.5px solid #D4C170;
+    width: 55px;
+    text-align: center;
+    vertical-align: middle;
+    padding: 12px 4px;
+    position: relative;
+  }
+  table.main-table td.week-col .week-label {
+    font-size: 10px;
+    color: #8B6F1F;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    opacity: 0.85;
+  }
+  table.main-table td.week-col .week-number {
+    font-size: 32px;
+    color: #2D8659;
+    font-weight: 900;
+    line-height: 1;
+    font-family: 'Cairo', 'Tajawal', Arial, sans-serif;
+    text-shadow: 1px 1px 0px rgba(255,255,255,0.6);
+    margin: 4px 0;
+  }
+  table.main-table td.week-col .week-decoration {
+    width: 30px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 0%, #D4C170 50%, transparent 100%);
+    margin: 8px auto 0;
+  }
   table.main-table tbody tr:hover td:not(.day-cell) {
     background: #FFF9E6;
   }
@@ -4385,9 +4996,15 @@ function buildExamTablePDF() {
   const startDate = (document.getElementById('pdfStartDate')?.value || '').trim();
   const periods = CURRENT_PERIODS;
   const numPeriods = periods.length;
+  const startWeek = parseInt(document.getElementById('pdfStartWeek')?.value) || 0;
+  const showWeekColumn = startWeek > 0;
   
   // الترويسة العلوية للجدول (3 أعمدة لكل فترة: المقرر، الرمز، المعمل)
-  let header1 = '<tr><th rowspan="2" class="day-cell">اليوم / التاريخ</th>';
+  let header1 = '<tr>';
+  if (showWeekColumn) {
+    header1 += '<th rowspan="2" class="week-col-header">الأسبوع</th>';
+  }
+  header1 += '<th rowspan="2" class="day-cell">اليوم / التاريخ</th>';
   for (let p = 0; p < numPeriods; p++) {
     const periodNamesAr = ['الفترة الأولى', 'الفترة الثانية', 'الفترة الثالثة', 'الفترة الرابعة', 'الفترة الخامسة', 'الفترة السادسة'];
     const periodTitle = periodNamesAr[p] || `الفترة ${p + 1}`;
@@ -4401,11 +5018,9 @@ function buildExamTablePDF() {
   }
   header2 += '</tr>';
   
-  // بناء الصفوف لكل يوم
-  let bodyRows = '';
-  
+  // المرحلة الأولى: نحسب البيانات لكل يوم ونجمع عدد الصفوف
+  const dayData = []; // [{d, di, periodCourses, maxRows, weekNum}]
   for (let d = 0; d < CONFIG.numDays; d++) {
-    // لكل فترة، نجمع المقررات فيها (كل مقرر في صف واحد مع كل قاعاته مدمجة)
     const periodCourses = [];
     let maxRows = 0;
     
@@ -4416,7 +5031,6 @@ function buildExamTablePDF() {
         .map(([code]) => courses.find(c => c.code === code))
         .filter(Boolean);
       
-      // لكل مقرر، نجمع كل قاعاته في نص واحد
       const cellRows = [];
       for (const c of placedHere) {
         const labDist = distributeStudentsToLabs(c, slot);
@@ -4435,14 +5049,42 @@ function buildExamTablePDF() {
       maxRows = Math.max(maxRows, cellRows.length);
     }
     
-    if (maxRows === 0) continue;
-    if (periodCourses.every(arr => arr.length === 0)) continue;
+    if (maxRows === 0 || periodCourses.every(arr => arr.length === 0)) continue;
     
     const di = getDayInfo(d, startDate);
+    const weekNum = startWeek > 0 ? (startWeek + di.weekIndex) : null;
+    dayData.push({ d, di, periodCourses, maxRows, weekNum, weekIndex: di.weekIndex });
+  }
+  
+  // المرحلة الثانية: نحسب مجموع الصفوف لكل أسبوع
+  const weekRowCount = {}; // weekIndex → total rows
+  dayData.forEach(item => {
+    weekRowCount[item.weekIndex] = (weekRowCount[item.weekIndex] || 0) + item.maxRows;
+  });
+  
+  // المرحلة الثالثة: نبني الصفوف
+  let bodyRows = '';
+  const renderedWeeks = new Set(); // لمتابعة الأسابيع اللي ما رسمناها بعد
+  
+  for (const item of dayData) {
+    const { di, periodCourses, maxRows, weekNum, weekIndex } = item;
+    const isFirstDayOfWeek = !renderedWeeks.has(weekIndex);
+    if (isFirstDayOfWeek) renderedWeeks.add(weekIndex);
     
     for (let r = 0; r < maxRows; r++) {
       bodyRows += '<tr>';
       
+      // عمود الأسبوع (rowspan لكل صفوف الأسبوع، نرسمه مرة واحدة فقط)
+      if (showWeekColumn && isFirstDayOfWeek && r === 0) {
+        const totalWeekRows = weekRowCount[weekIndex];
+        bodyRows += `<td class="week-col" rowspan="${totalWeekRows}">
+          <div class="week-label">الأسبوع</div>
+          <div class="week-number">${toArabicHinduDigits(weekNum)}</div>
+          <div class="week-decoration"></div>
+        </td>`;
+      }
+      
+      // عمود اليوم (rowspan لكل صفوف اليوم)
       if (r === 0) {
         bodyRows += `<td class="day-cell" rowspan="${maxRows}">
           ${di.name}
@@ -4539,10 +5181,13 @@ function buildSupervisorsMatrix() {
   }
   
   // الترويسة: المراقبة | يوم 1 | يوم 2 | ...
+  const startWeek = parseInt(document.getElementById('pdfStartWeek')?.value) || 0;
   let header = '<tr><th>المراقبة</th>';
   for (const d of daysWithExams) {
     const di = getDayInfo(d, startDate);
-    header += `<th class="day-header">${di.name}<br><span style="font-weight:400; font-size:9px;">${di.date}</span></th>`;
+    const weekNum = startWeek > 0 ? (startWeek + di.weekIndex) : null;
+    const weekLabel = weekNum ? `<div style="font-size:9px; font-weight:700; color:#2D8659; background:#DDF0E5; padding:1px 5px; border-radius:3px; margin-bottom:3px; display:inline-block;">الأسبوع ${toArabicHinduDigits(weekNum)}</div><br>` : '';
+    header += `<th class="day-header">${weekLabel}${di.name}<br><span style="font-weight:400; font-size:9px;">${di.date}</span></th>`;
   }
   header += '</tr>';
   
@@ -4617,6 +5262,9 @@ window.toggleInstructorDay = toggleInstructorDay;
 window.toggleAllDaysForInstructor = toggleAllDaysForInstructor;
 window.selectAllDaysForAll = selectAllDaysForAll;
 window.clearAllDaysForAll = clearAllDaysForAll;
+window.renderInstructorSpecialties = renderInstructorSpecialties;
+window.toggleInstructorSpecialty = toggleInstructorSpecialty;
+window.clearAllSpecialtyExclusions = clearAllSpecialtyExclusions;
 window.openHijriCalendar = openHijriCalendar;
 window.hijriCalNav = hijriCalNav;
 window.hijriCalGoToYear = hijriCalGoToYear;
@@ -4636,6 +5284,8 @@ window.autoAssignSupervisors = autoAssignSupervisors;
 window.clearAll = clearAll;
 window.clearSupervisors = clearSupervisors;
 window.exportFullExcel = exportFullExcel;
+window.saveProjectBackup = saveProjectBackup;
+window.restoreProjectBackup = restoreProjectBackup;
 window.exportScheduleOnly = exportScheduleOnly;
 window.exportSupervisorsOnly = exportSupervisorsOnly;
 window.exportFullPDF = exportFullPDF;
